@@ -1,4 +1,4 @@
-const API_BASE = 'http://127.0.0.1:5000/api';
+const API_BASE = 'https://cinemind-backend-i482.onrender.com/api';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('cinemind_token');
