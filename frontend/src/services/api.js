@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = 'http://127.0.0.1:5000/api';
 
 function getAuthHeaders() {
   const token = localStorage.getItem('cinemind_token');
@@ -66,6 +66,7 @@ export const api = {
   removeFromWatchlist: (movieId) => request(`/me/watchlist/${movieId}`, { method: 'DELETE' }),
   getHistory: () => request('/me/history'),
   recordView: (movieId) => request(`/me/history/${movieId}`, { method: 'POST' }),
+  clearHistory: () => request('/me/history', { method: 'DELETE' }),
 
   // Recommendations & Onboarding
   getRecommendations: (limit = 10) => request(`/recommendations?limit=${limit}`),
@@ -91,6 +92,6 @@ export const api = {
   // Admin
   getAdminOverview: () => request('/admin/overview'),
   createMovie: (payload) => request('/admin/movies', { method: 'POST', body: JSON.stringify(payload) }),
-  updateMovie: (id, payload) => request('/admin/movies/${id}', { method: 'PUT', body: JSON.stringify(payload) }),
+  updateMovie: (id, payload) => request(`/admin/movies/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteMovie: (id) => request(`/admin/movies/${id}`, { method: 'DELETE' })
 };

@@ -188,6 +188,12 @@ def get_personal_recommendations(user_id: int, limit: int = 12, exclude_rated: b
     taste_dna = build_user_taste_dna(user_id)
     top_user_genres = set(taste_dna['top_genres']) if taste_dna else set()
 
+    preferred_languages = set()
+    if taste_dna and taste_dna.get('favorite_languages'):
+        preferred_languages.update(taste_dna['favorite_languages'])
+    for pl in UserPreference.query.filter_by(user_id=user_id, preference_type='language').all():
+        preferred_languages.add(pl.preference_value)
+
     movies = Movie.query.all()
     candidates = []
 
@@ -209,6 +215,8 @@ def get_personal_recommendations(user_id: int, limit: int = 12, exclude_rated: b
         reasons = []
         if matched_genres:
             reasons.append(f"Matches your high affinity for {', '.join(matched_genres)}")
+        if m.language in preferred_languages:
+            reasons.append(f"In your preferred language ({m.language})")
         if m.bayesian_score >= 4.0:
             reasons.append(f"Highly validated general audience score ({m.bayesian_score:.1f}★ with {m.rating_count} ratings)")
         if user.runtime_limit and m.runtime_minutes and m.runtime_minutes <= user.runtime_limit:

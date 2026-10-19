@@ -18,7 +18,7 @@ MOVIES_DATA = [
         'language': 'Telugu',
         'runtime_minutes': 187,
         'overview': 'A fearless warrior on a perilous mission comes face to face with a steely cop serving British forces in pre-independent India.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/wE0noFU2ETo9hgQAtzlXMZ7bEip.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/wE0I6efAW4cDDmZQWtwZMOW44EJ.jpg',
         'genres': ['Action', 'Drama', 'Adventure'],
         'ratings_dist': (4.8, 85),
         'reviews': [
@@ -45,7 +45,7 @@ MOVIES_DATA = [
         'language': 'Telugu',
         'runtime_minutes': 152,
         'overview': 'Four unconventional love stories set in the rustic neighborhood of Kancharapalem showcase the nuances of love across different ages and societal strata.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/vJv3K1y2fI8Y4N0U3eF5I7S6f1c.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/fDsN0xMM7OUJohZbCxjMB3JXu8h.jpg',
         'genres': ['Drama', 'Romance'],
         'ratings_dist': (4.9, 42),
         'reviews': [
@@ -58,7 +58,7 @@ MOVIES_DATA = [
         'language': 'Telugu',
         'runtime_minutes': 157,
         'overview': 'A failed cricketer decides to revive his cricketing career in his late 30s despite health challenges to fulfill his young son’s wish.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/5k7B6W5E9F9D6K2F7U4G0H8L1M.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/bU9q9yVtxeBiC0Do27CekHXNE6D.jpg',
         'genres': ['Drama', 'Biography'],
         'ratings_dist': (4.6, 55),
         'reviews': [
@@ -71,7 +71,7 @@ MOVIES_DATA = [
         'language': 'Telugu',
         'runtime_minutes': 145,
         'overview': 'A murdered man is reincarnated as a common housefly and seeks to protect his true love while exacting revenge on his wealthy murderer.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/o71gM5K1fE4Q0L3A6J8D7R9T2W.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/pX7fn4EZrg2YFlV4GNMIfHDOQZ6.jpg',
         'genres': ['Fantasy', 'Action', 'Comedy'],
         'ratings_dist': (4.4, 60),
         'reviews': [
@@ -86,7 +86,7 @@ MOVIES_DATA = [
         'language': 'Tamil',
         'runtime_minutes': 174,
         'overview': 'A special investigator uncovers a syndicate of masked vigilantes led by a ghost from the past battling a ruthless drug cartel.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/lP9m5rBvN1kK9gA8E2vB3bK0k5R.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/774UV1aCURb4s4JfEFg3IEMu5Zj.jpg',
         'genres': ['Action', 'Thriller', 'Crime'],
         'ratings_dist': (4.7, 72),
         'reviews': [
@@ -100,7 +100,7 @@ MOVIES_DATA = [
         'language': 'Tamil',
         'runtime_minutes': 164,
         'overview': 'A brave activist-lawyer fights for justice when a tribal man is falsely accused and mysteriously disappears from police custody.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/spAgr5zEclwL2aW5jUf2FkY6D8G.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/ehybiOtBUtrMkmtB39zQEtq1Jie.jpg',
         'genres': ['Crime', 'Drama', 'Mystery'],
         'ratings_dist': (4.8, 68),
         'reviews': [
@@ -113,7 +113,7 @@ MOVIES_DATA = [
         'language': 'Tamil',
         'runtime_minutes': 176,
         'overview': 'An unfaithful wife, an estranged father, a corrupt cop, and a determined boy find their destinies intertwined on an eventful day.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/uU8V7X7aB3M7rQ9D8k9L4V2b6E.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/4B2NFKN713AdXJExc8Kayr6qofu.jpg',
         'genres': ['Drama', 'Thriller', 'Crime'],
         'ratings_dist': (4.5, 45),
         'reviews': [
@@ -126,7 +126,7 @@ MOVIES_DATA = [
         'language': 'Tamil',
         'runtime_minutes': 158,
         'overview': 'Two high school sweethearts meet at a reunion after 22 years and spend an emotionally poignant night reminiscing about their past.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/p4T5fE3H7rB1M9kK6b0K4F7U9L.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/dYImzEquIZglfzDnJlHYdlUIeSo.jpg',
         'genres': ['Romance', 'Drama'],
         'ratings_dist': (4.6, 50),
         'reviews': [
@@ -141,7 +141,7 @@ MOVIES_DATA = [
         'language': 'Malayalam',
         'runtime_minutes': 135,
         'overview': 'A group of friends from a small town embark on a vacation to Kodaikanal, where an unexpected mishap inside Guna Caves tests their ultimate bond.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/7aE7fW5K8bM1rQ3D7k9L4V2b6E.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/zGsHpuMN412VyzJZZnQeq4lMdjF.jpg',
         'genres': ['Adventure', 'Drama', 'Thriller'],
         'ratings_dist': (4.8, 64),
         'reviews': [
@@ -154,7 +154,7 @@ MOVIES_DATA = [
         'language': 'Malayalam',
         'runtime_minutes': 160,
         'overview': 'A humble cable TV operator resorts to intelligent deception to protect his family after they commit an accidental crime.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/y6Z1A0K5rB7M9kL6b0K4F7U9L.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/gPBldHTnqpgsrnDnSrAlFwE6Q1t.jpg',
         'genres': ['Crime', 'Thriller', 'Mystery'],
         'ratings_dist': (4.9, 90),
         'reviews': [
@@ -168,7 +168,7 @@ MOVIES_DATA = [
         'language': 'Malayalam',
         'runtime_minutes': 135,
         'overview': 'Four dysfunctional brothers living in a dilapidated home find courage, love, and reconciliation when a series of domestic crises arise.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/d9kK4F7U9L6b0K5rB7M9kL6b0K.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/lJ3RvIirE2C7gdBKvPRaoQ3iCo2.jpg',
         'genres': ['Drama', 'Comedy', 'Romance'],
         'ratings_dist': (4.7, 58),
         'reviews': [
@@ -181,7 +181,7 @@ MOVIES_DATA = [
         'language': 'Malayalam',
         'runtime_minutes': 139,
         'overview': 'A folk singer escaping slavery stumbles into a mysterious aristocratic mansion ruled by an enigmatic and sinister sorcerer.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/8kK5rB7M9kL6b0K4F7U9L6b0K5.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/snQLwRrfQAl5YFKVefZq9Lbscki.jpg',
         'genres': ['Horror', 'Mystery', 'Thriller'],
         'ratings_dist': (4.6, 38),
         'reviews': [
@@ -196,7 +196,7 @@ MOVIES_DATA = [
         'language': 'Kannada',
         'runtime_minutes': 148,
         'overview': 'When greed paves the way for betrayal and rebellion, a young tribal champion invokes the ancient spirit of Bhoota Kola to protect his sacred forest.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/n5kK4F7U9L6b0K5rB7M9kL6b0K.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg',
         'genres': ['Action', 'Drama', 'Fantasy', 'Thriller'],
         'ratings_dist': (4.8, 80),
         'reviews': [
@@ -209,7 +209,7 @@ MOVIES_DATA = [
         'language': 'Kannada',
         'runtime_minutes': 156,
         'overview': 'A ruthless young mercenary rises through Bombay’s criminal underworld and is hired to assassinate the tyrannical overlord of the Kolar Gold Fields.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/t7M9kL6b0K4F7U9L6b0K5rB7M.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/ltHlJwvxKv7d0ooCiKSAvfwV9tX.jpg',
         'genres': ['Action', 'Crime', 'Drama'],
         'ratings_dist': (4.5, 75),
         'reviews': [
@@ -222,7 +222,7 @@ MOVIES_DATA = [
         'language': 'Kannada',
         'runtime_minutes': 164,
         'overview': 'A lonely, cynical factory worker’s solitary life is transformed when a lively Labrador puppy wanders into his home.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/6b0K4F7U9L6b0K5rB7M9kL6b0K.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/qArPmXH0aWsT3SEtYl8XrU2Oz48.jpg',
         'genres': ['Adventure', 'Comedy', 'Drama'],
         'ratings_dist': (4.7, 44),
         'reviews': [
@@ -250,7 +250,7 @@ MOVIES_DATA = [
         'language': 'Hindi',
         'runtime_minutes': 161,
         'overview': 'Former wrestler Mahavir Singh Phogat trains his young daughters Geeta and Babita to overcome cultural prejudices and win Commonwealth Gold.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/lP9m5rBvN1kK9gA8E2vB3bK0k5R.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/cJRPOLEexI7qp2DKtFfCh7YaaUG.jpg',
         'genres': ['Action', 'Biography', 'Drama'],
         'ratings_dist': (4.8, 88),
         'reviews': [
@@ -263,7 +263,7 @@ MOVIES_DATA = [
         'language': 'Hindi',
         'runtime_minutes': 104,
         'overview': 'A mythological horror story revolving around human greed, a cursed village, and a decaying ancestral manor hiding a secret gold treasure.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/9kL6b0K4F7U9L6b0K5rB7M9kL6.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/z1xOCxw780WFJC5uCTMfCkQ4Agi.jpg',
         'genres': ['Fantasy', 'Horror', 'Drama'],
         'ratings_dist': (4.7, 52),
         'reviews': [
@@ -276,7 +276,7 @@ MOVIES_DATA = [
         'language': 'Hindi',
         'runtime_minutes': 139,
         'overview': 'A visually impaired pianist unwittingly becomes entangled in the murder cover-up of a former Bollywood star.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/dyhaB19AIC4PkUVUT2Et09y97Mz.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/dy3K6hNvwE05siGgiLJcEiwgpdO.jpg',
         'genres': ['Crime', 'Thriller', 'Comedy'],
         'ratings_dist': (4.7, 70),
         'reviews': [

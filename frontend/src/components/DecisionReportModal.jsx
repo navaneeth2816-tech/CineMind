@@ -5,6 +5,7 @@ import {
   X, Star, ShieldCheck, Sparkles, AlertTriangle, CheckCircle2, 
   Eye, EyeOff, Bookmark, BookmarkCheck, ArrowRight, Info, BarChart2 
 } from 'lucide-react';
+import MoviePoster from './MoviePoster';
 
 export default function DecisionReportModal({ movieId, isOpen, onClose, onMovieSelect }) {
   const { user, watchlistIds, toggleWatchlist, setIsAuthModalOpen } = useAuth();
@@ -96,10 +97,13 @@ export default function DecisionReportModal({ movieId, isOpen, onClose, onMovieS
             {/* Top Movie Overview Banner */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
               <div className="md:col-span-1 flex justify-center">
-                <img
-                  src={movie.poster_url || 'https://via.placeholder.com/300x450?text=No+Poster'}
+                <MoviePoster
+                  src={movie.poster_url}
                   alt={movie.title}
-                  className="w-40 sm:w-48 h-auto object-cover rounded-xl shadow-xl border border-slate-800"
+                  title={movie.title}
+                  year={movie.release_year}
+                  language={movie.language}
+                  className="w-40 sm:w-48 shadow-xl border border-slate-800"
                 />
               </div>
 
@@ -404,10 +408,13 @@ export default function DecisionReportModal({ movieId, isOpen, onClose, onMovieS
                       onClick={() => onMovieSelect && onMovieSelect(alt.movie.id)}
                       className="p-3 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-pointer transition flex items-center space-x-3 group"
                     >
-                      <img
+                      <MoviePoster
                         src={alt.movie.poster_url}
                         alt={alt.movie.title}
-                        className="w-12 h-16 object-cover rounded-lg border border-slate-800"
+                        title={alt.movie.title}
+                        year={alt.movie.release_year}
+                        language={alt.movie.language}
+                        className="w-12 h-16 shrink-0 rounded-lg border border-slate-800"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-xs text-white truncate group-hover:text-indigo-400 transition">

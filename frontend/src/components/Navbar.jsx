@@ -6,6 +6,7 @@ import {
   Film, Sparkles, BrainCircuit, Users, BarChart3, 
   Search, Bookmark, ShieldAlert, LogOut, User, ChevronDown, Scale
 } from 'lucide-react';
+import MoviePoster from './MoviePoster';
 
 export default function Navbar({ onSelectMovie }) {
   const { user, isAuthenticated, isAdmin, watchlistIds, logout, setIsAuthModalOpen, setIsOnboardingModalOpen } = useAuth();
@@ -82,9 +83,7 @@ export default function Navbar({ onSelectMovie }) {
               <span className="text-lg font-black tracking-tight text-white group-hover:text-indigo-400 transition">
                 CineMind
               </span>
-              <span className="px-1.5 py-0.2 text-[9px] font-extrabold uppercase bg-indigo-950 text-indigo-400 border border-indigo-700/60 rounded">
-                v2.0
-              </span>
+              
             </div>
             <p className="text-[10px] text-slate-400 font-medium tracking-tight -mt-0.5 hidden sm:block">
               Decision Intelligence
@@ -118,10 +117,13 @@ export default function Navbar({ onSelectMovie }) {
                     onClick={() => handleSelectSuggestion(m)}
                     className="p-2.5 hover:bg-slate-800/80 cursor-pointer flex items-center space-x-3 transition group"
                   >
-                    <img
-                      src={m.poster_url || 'https://via.placeholder.com/60x90'}
+                    <MoviePoster
+                      src={m.poster_url}
                       alt={m.title}
-                      className="w-8 h-12 object-cover rounded border border-slate-800 shrink-0"
+                      title={m.title}
+                      year={m.release_year}
+                      language={m.language}
+                      className="w-8 h-12 shrink-0 rounded border border-slate-800"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-xs text-white group-hover:text-indigo-400 transition truncate">

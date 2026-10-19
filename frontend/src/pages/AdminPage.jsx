@@ -5,6 +5,7 @@ import {
   ShieldAlert, Plus, Edit2, Trash2, Database, 
   AlertCircle, CheckCircle, FileText, X, Check 
 } from 'lucide-react';
+import MoviePoster from '../components/MoviePoster';
 
 export default function AdminPage() {
   const { user, isAdmin, setIsAuthModalOpen } = useAuth();
@@ -197,10 +198,13 @@ export default function AdminPage() {
               {movies.map((m) => (
                 <tr key={m.id} className="hover:bg-slate-800/40">
                   <td className="py-2.5 px-3 font-semibold text-white flex items-center space-x-2">
-                    <img
+                    <MoviePoster
                       src={m.poster_url}
                       alt={m.title}
-                      className="w-6 h-9 object-cover rounded border border-slate-800 shrink-0"
+                      title={m.title}
+                      year={m.release_year}
+                      language={m.language}
+                      className="w-6 h-9 shrink-0 rounded border border-slate-800"
                     />
                     <div>
                       <div>{m.title}</div>

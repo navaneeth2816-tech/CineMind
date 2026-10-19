@@ -7,6 +7,7 @@ import {
   Bookmark, BookmarkCheck, ArrowRight, ShieldCheck, 
   RotateCcw, Scale, Zap, Info
 } from 'lucide-react';
+import MoviePoster from '../components/MoviePoster';
 
 export default function DiscoverPage({ onOpenDecisionReport }) {
   const { user, isAuthenticated, watchlistIds, toggleWatchlist } = useAuth();
@@ -250,9 +251,12 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                 className="group relative bg-slate-900 border border-slate-800 rounded-2xl p-2.5 cursor-pointer hover:border-indigo-500/50 transition duration-300 shadow-lg flex flex-col justify-between"
               >
                 <div className="relative aspect-[2/3] rounded-xl overflow-hidden mb-2 bg-slate-950">
-                  <img
+                  <MoviePoster
                     src={rec.movie.poster_url}
                     alt={rec.movie.title}
+                    title={rec.movie.title}
+                    year={rec.movie.release_year}
+                    language={rec.movie.language}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                   />
                   {/* Personal Compatibility badge */}
@@ -457,9 +461,12 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
               >
                 {/* Poster container */}
                 <div className="relative aspect-[2/3] rounded-xl overflow-hidden mb-3 bg-slate-950">
-                  <img
-                    src={m.poster_url || 'https://via.placeholder.com/300x450?text=No+Poster'}
+                  <MoviePoster
+                    src={m.poster_url}
                     alt={m.title}
+                    title={m.title}
+                    year={m.release_year}
+                    language={m.language}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                   />
 

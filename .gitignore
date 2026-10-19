@@ -2,8 +2,16 @@
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Environment variables and secrets
+.env
 *.env
+backend/.env
+
+# Virtual environment
 backend/venv/
+
+# Database
 backend/app/cinemind.db
 backend/app/*.db
 

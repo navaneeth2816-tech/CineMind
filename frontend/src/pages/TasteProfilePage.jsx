@@ -5,6 +5,7 @@ import {
   Sparkles, Sliders, Film, Clock, Globe, Bookmark, 
   History, Star, Trash2, ShieldCheck, Check, AlertCircle 
 } from 'lucide-react';
+import MoviePoster from '../components/MoviePoster';
 
 export default function TasteProfilePage({ onOpenDecisionReport }) {
   const { user, isAuthenticated, setIsAuthModalOpen, setIsOnboardingModalOpen, refreshUser } = useAuth();
@@ -89,9 +90,11 @@ export default function TasteProfilePage({ onOpenDecisionReport }) {
 
   const handleClearHistory = async () => {
     try {
-      await api.getHistory(); // Clear API
+      await api.clearHistory();
       setHistory([]);
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to clear viewing history:', e);
+    }
   };
 
   if (!isAuthenticated) {
@@ -236,10 +239,13 @@ export default function TasteProfilePage({ onOpenDecisionReport }) {
                         onClick={() => onOpenDecisionReport(m.id)}
                         className="flex items-center space-x-3 cursor-pointer min-w-0"
                       >
-                        <img
+                        <MoviePoster
                           src={m.poster_url}
                           alt={m.title}
-                          className="w-10 h-14 object-cover rounded-lg shrink-0 border border-slate-800"
+                          title={m.title}
+                          year={m.release_year}
+                          language={m.language}
+                          className="w-10 h-14 shrink-0 rounded-lg border border-slate-800"
                         />
                         <div className="min-w-0">
                           <h4 className="text-xs font-bold text-white truncate group-hover:text-indigo-400 transition">
@@ -288,10 +294,13 @@ export default function TasteProfilePage({ onOpenDecisionReport }) {
                       onClick={() => onOpenDecisionReport(item.movie.id)}
                     >
                       <div className="flex items-center space-x-3">
-                        <img
+                        <MoviePoster
                           src={item.movie.poster_url}
                           alt={item.movie.title}
-                          className="w-8 h-12 object-cover rounded border border-slate-800"
+                          title={item.movie.title}
+                          year={item.movie.release_year}
+                          language={item.movie.language}
+                          className="w-8 h-12 shrink-0 rounded border border-slate-800"
                         />
                         <div>
                           <h4 className="text-xs font-bold text-white">{item.movie.title}</h4>

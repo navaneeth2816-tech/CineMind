@@ -21,10 +21,29 @@ def parse_natural_language_query(query_text: str):
     Parses natural language requests into structured catalogue filters (PRD Section 6.9):
     Example: 'Find a Telugu thriller under two hours with a high audience rating'
     """
-    if not query_text:
-        return {}, {}, []
+    if not query_text or not query_text.strip():
+        return {
+            'original_query': query_text or '',
+            'parsed_entities': {
+                'language': None,
+                'genres': [],
+                'max_runtime': None,
+                'min_rating': None,
+                'min_year': None,
+                'max_year': None
+            },
+            'filter_summary': 'No query provided',
+            'match_count': 0,
+            'clarifications': ['Please enter a query (e.g. "Telugu thrillers under 2 hours").'],
+            'results': []
+        }
 
     q_lower = query_text.lower()
+    # Normalize common word numbers
+    word_to_num = {'one': '1', 'two': '2', 'three': '3', 'four': '4'}
+    for word, num in word_to_num.items():
+        q_lower = re.sub(r'\b' + word + r'\s+hour', f'{num} hour', q_lower)
+
     extracted = {
         'language': None,
         'genres': [],

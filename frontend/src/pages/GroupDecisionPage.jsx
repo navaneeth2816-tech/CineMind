@@ -6,6 +6,7 @@ import {
   Sparkles, Trophy, ArrowRight, ShieldCheck, Check, 
   Copy, RefreshCw, AlertCircle 
 } from 'lucide-react';
+import MoviePoster from '../components/MoviePoster';
 
 export default function GroupDecisionPage({ onOpenDecisionReport }) {
   const { user } = useAuth();
@@ -418,10 +419,13 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
 
                     <div className="space-y-3">
                       <div className="flex items-start space-x-3">
-                        <img
+                        <MoviePoster
                           src={c.movie.poster_url}
                           alt={c.movie.title}
-                          className="w-16 h-24 object-cover rounded-xl border border-slate-800 shrink-0"
+                          title={c.movie.title}
+                          year={c.movie.release_year}
+                          language={c.movie.language}
+                          className="w-16 h-24 shrink-0 rounded-xl border border-slate-800"
                         />
                         <div className="min-w-0">
                           <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase bg-slate-950 text-indigo-400 border border-slate-800 rounded">

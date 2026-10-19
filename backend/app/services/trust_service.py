@@ -37,12 +37,16 @@ def calculate_movie_trust_metrics(movie_id: int):
             'bayesian_score': round(overall_mean, 2),
             'evidence_constant_m': m,
             'catalogue_mean_c': round(overall_mean, 2),
-            'evidence_label': 'Limited rating evidence',
+            'evidence_label': 'No ratings recorded (catalogue baseline)',
             'distribution': distribution,
             'distribution_pct': {k: 0.0 for k in distribution},
             'source_breakdown': sources,
+            'standard_deviation': 0.0,
             'confidence_interval_95': 0.0,
-            'margin_of_error': 'N/A (insufficient samples)'
+            'ci_lower': round(overall_mean, 2),
+            'ci_upper': round(overall_mean, 2),
+            'is_estimate_only': True,
+            'formula': 'weighted_score = (v/(v+m)) * R + (m/(v+m)) * C'
         }
 
     sum_ratings = 0.0
@@ -58,23 +62,32 @@ def calculate_movie_trust_metrics(movie_id: int):
     # Bayesian formula: (v / (v + m)) * R + (m / (v + m)) * C
     weighted_score = (v / (v + m)) * R + (m / (v + m)) * overall_mean
 
-    # Standard deviation & 95% Confidence Interval
-    variance = sum((r.rating - R) ** 2 for r in ratings) / v
-    std_dev = math.sqrt(variance)
-    margin_of_error = (1.96 * (std_dev / math.sqrt(v))) if v > 1 else 0.5
+    # Sample standard deviation & 95% Confidence Interval
+    if v > 1:
+        sample_variance = sum((r.rating - R) ** 2 for r in ratings) / (v - 1)
+        std_dev = math.sqrt(max(0.0, sample_variance))
+        margin_of_error = 1.96 * (std_dev / math.sqrt(v))
+    else:
+        std_dev = 0.0
+        margin_of_error = 1.0  # High uncertainty for single observation
 
-    # Evidence label according to PRD
+    # Evidence label according to sample strength
     if v >= 50:
         evidence_label = 'Broader rating sample'
     elif v >= 15:
         evidence_label = 'Moderate rating sample'
-    else:
+    elif v >= 2:
         evidence_label = 'Limited rating evidence'
+    else:
+        evidence_label = 'Single rating (high uncertainty)'
 
     distribution_pct = {
         star: round((count / v) * 100, 1)
         for star, count in distribution.items()
     }
+
+    ci_lower = max(1.0, round(R - margin_of_error, 2))
+    ci_upper = min(5.0, round(R + margin_of_error, 2))
 
     return {
         'movie_id': movie_id,
@@ -90,6 +103,9 @@ def calculate_movie_trust_metrics(movie_id: int):
         'source_breakdown': sources,
         'standard_deviation': round(std_dev, 2),
         'confidence_interval_95': round(margin_of_error, 2),
+        'ci_lower': ci_lower,
+        'ci_upper': ci_upper,
+        'is_estimate_only': False,
         'formula': 'weighted_score = (v/(v+m)) * R + (m/(v+m)) * C'
     }
 

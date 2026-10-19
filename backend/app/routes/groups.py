@@ -120,12 +120,27 @@ def vote_candidate(code):
     data = request.get_json() or {}
     member_id = data.get('member_id')
     movie_id = data.get('movie_id')
-    vote_val = int(data.get('vote', 1)) # 1 or -1
+    
+    try:
+        raw_vote = int(data.get('vote', 1))
+        vote_val = 1 if raw_vote >= 1 else -1
+    except (ValueError, TypeError):
+        vote_val = 1
 
     if not member_id or not movie_id:
         return jsonify({'error': 'member_id and movie_id are required.'}), 400
 
-    # Upsert vote
+    # Verify member belongs to this session
+    member = GroupMember.query.filter_by(id=member_id, group_id=session.id).first()
+    if not member:
+        return jsonify({'error': 'Participant is not registered in this group session.'}), 404
+
+    # Verify movie exists
+    movie = Movie.query.get(movie_id)
+    if not movie:
+        return jsonify({'error': 'Movie not found in catalogue.'}), 404
+
+    # Upsert vote (prevents duplicate votes by same member on same movie)
     vote = GroupVote.query.filter_by(
         group_id=session.id,
         member_id=member_id,

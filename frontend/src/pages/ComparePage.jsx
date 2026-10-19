@@ -6,6 +6,7 @@ import {
   Scale, Plus, X, Star, ShieldCheck, Sparkles, 
   Clock, Globe, Film, ArrowRight, Check 
 } from 'lucide-react';
+import MoviePoster from '../components/MoviePoster';
 
 export default function ComparePage({ onOpenDecisionReport }) {
   const { user } = useAuth();
@@ -113,7 +114,7 @@ export default function ComparePage({ onOpenDecisionReport }) {
       ) : (
         <div className="space-y-6">
           {/* Comparison Cards Grid */}
-          <div className={`grid grid-cols-1 md:grid-cols-${Math.max(2, comparisonMovies.length)} gap-6`}>
+          <div className={`grid grid-cols-1 ${comparisonMovies.length <= 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6`}>
             {comparisonMovies.map((movie, idx) => (
               <div
                 key={movie.id}
@@ -133,10 +134,13 @@ export default function ComparePage({ onOpenDecisionReport }) {
                 <div className="space-y-4">
                   {/* Poster & Title Header */}
                   <div className="flex items-start space-x-4">
-                    <img
+                    <MoviePoster
                       src={movie.poster_url}
                       alt={movie.title}
-                      className="w-20 sm:w-24 h-auto object-cover rounded-xl shadow-md border border-slate-800 shrink-0"
+                      title={movie.title}
+                      year={movie.release_year}
+                      language={movie.language}
+                      className="w-20 sm:w-24 shrink-0 rounded-xl shadow-md border border-slate-800"
                     />
                     <div className="min-w-0">
                       <div className="flex items-center space-x-1.5 mb-1">

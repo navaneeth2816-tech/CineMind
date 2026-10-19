@@ -48,7 +48,7 @@ function AppContent() {
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950/60 py-8 px-4 text-center text-xs text-slate-500 space-y-2 mt-auto">
         <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
-          <span className="font-bold text-slate-300">CineMind v2.0</span>
+          <span className="font-bold text-slate-300">CineMind</span>
           <span>•</span>
           <span>Personalised Movie Decision Intelligence Platform</span>
           <span>•</span>
