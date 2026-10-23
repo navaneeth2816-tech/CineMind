@@ -236,11 +236,35 @@ class CineMindComprehensiveTestSuite(unittest.TestCase):
             self.assertIn("RRR", comp['response'])
             self.assertIn("Vikram", comp['response'])
 
+            # Direct vs comparison
+            vs_comp = run_smart_assistant("RRR vs Vikram")
+            self.assertEqual(vs_comp['type'], 'comparison')
+            self.assertIn("RRR", vs_comp['response'])
+
             # Rating evidence
             evidence = run_smart_assistant("Is Kantara reliable?")
             self.assertEqual(evidence['type'], 'trust_analysis')
             self.assertIn("Kantara", evidence['response'])
             self.assertIn("Bayesian", evidence['response'])
+
+            # Regional movie discovery: Telugu
+            telugu = run_smart_assistant("top telugu movies")
+            self.assertEqual(telugu['type'], 'recommendation_list')
+            self.assertIn("C/o Kancharapalem", telugu['response'])
+            self.assertIn("RRR", telugu['response'])
+            self.assertGreater(len(telugu['related_movie_ids']), 0)
+
+            # Constrained search with relaxed fallback: Malayalam mystery under 2 hours
+            malayalam = run_smart_assistant("Find a Malayalam mystery under 2 hours")
+            self.assertEqual(malayalam['type'], 'recommendation_list')
+            self.assertIn("Drishyam", malayalam['response'])
+            self.assertIn("Bramayugam", malayalam['response'])
+            self.assertIn(11, malayalam['related_movie_ids'])
+
+            # Grounded Bayesian methodology question
+            bayesian = run_smart_assistant("What is Bayesian rating smoothing?")
+            self.assertIn("Bayesian", bayesian['response'])
+            self.assertIn("Formula", bayesian['response'])
 
 
 if __name__ == '__main__':
