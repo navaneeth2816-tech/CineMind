@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
-  Search, Sparkles, Filter, SlidersHorizontal, Star, 
+  Film, Search, Sparkles, Filter, SlidersHorizontal, Star, 
   Bookmark, BookmarkCheck, ArrowRight, ShieldCheck, 
   RotateCcw, Scale, Zap, Info
 } from 'lucide-react';
