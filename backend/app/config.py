@@ -1,6 +1,10 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
+# Ensure backend/.env is loaded reliably regardless of working directory
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+load_dotenv(BACKEND_DIR / ".env")
 load_dotenv()
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
