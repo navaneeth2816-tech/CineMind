@@ -1,5 +1,5 @@
 # CineMind — Personalised Movie Decision Intelligence Platform
-> **Version 2.0 | B.Tech CSE Mini Project / Hackathon Project**
+
 > Full-Stack Decision Intelligence Web Application powered by React, Tailwind CSS, Flask, SQLAlchemy, Bayesian Evidence Analysis, and Collaborative AI.
 
 ---
