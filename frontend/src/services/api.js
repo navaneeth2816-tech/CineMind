@@ -1,5 +1,5 @@
-// Use local backend proxy during 'npm run dev', and production Render URL when deployed
-const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'https://cinemind-backend-i482.onrender.com/api');
+const FALLBACK_API_BASE = 'https://cinemind-backend-i482.onrender.com/api';
+const PRIMARY_API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : FALLBACK_API_BASE);
 
 function getAuthHeaders() {
   const token = localStorage.getItem('cinemind_token');
@@ -11,20 +11,31 @@ function getAuthHeaders() {
 }
 
 async function request(endpoint, options = {}) {
-  const url = `${API_BASE}${endpoint}`;
   const headers = {
     ...getAuthHeaders(),
     ...(options.headers || {})
   };
 
   try {
-    const res = await fetch(url, { ...options, headers });
+    const res = await fetch(`${PRIMARY_API_BASE}${endpoint}`, { ...options, headers });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       throw new Error(data.error || data.message || `Request failed with status ${res.status}`);
     }
     return data;
   } catch (err) {
+    // If local dev server proxy is unreachable (e.g. python run.py not yet started), auto-fallback to deployed Render backend
+    if (PRIMARY_API_BASE === '/api') {
+      try {
+        const fallbackRes = await fetch(`${FALLBACK_API_BASE}${endpoint}`, { ...options, headers });
+        const fallbackData = await fallbackRes.json().catch(() => ({}));
+        if (fallbackRes.ok) {
+          return fallbackData;
+        }
+      } catch (fbErr) {
+        // Fallback also failed
+      }
+    }
     console.error(`API Error [${endpoint}]:`, err);
     throw err;
   }
