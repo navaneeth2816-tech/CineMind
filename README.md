@@ -15,11 +15,11 @@ General audience ratings do not necessarily reflect an individual's unique prefe
 
 | Layer | Technology | Key Responsibility |
 | :--- | :--- | :--- |
-| **Frontend** | React 19, Tailwind CSS v4, Lucide Icons, Vite | Responsive UI, interactive charts, live autocomplete, dark aesthetic, modals |
-| **Backend** | Python 3.15, Flask 3.1, REST API | Business logic, authentication, recommendation algorithms, Bayesian calculations |
-| **Database** | SQLAlchemy ORM, SQLite (local zero-config) / MySQL (production) | Persistent catalogue, users, ratings, watchlists, group rooms, audit trail |
-| **Analytics & ML**| Bayesian Smoothed Ranking, Cosine Vector Compatibility | Rating trust analysis, Taste DNA inference, fairness ranking |
-| **Security** | Bcrypt password hashing, PyJWT, Server-Side Policy Validation | Strong password policy, rate-limiting, role-based access control |
+| **Frontend** | HTML5, CSS3 (Tailwind CSS), JavaScript (ES6+), React | Responsive web pages, movie cards, search filters, modals |
+| **Backend** | Python, Flask, REST API | Business logic, authentication, recommendation algorithms, API endpoints |
+| **Database** | MySQL (SQLAlchemy ORM) | Stores all 25 movies, 1,890 ratings, user accounts, and watchlists |
+| **AI & NLP** | Google Gemini GenAI & Rule-based NLP | Natural language movie search and AI conversational assistant |
+| **Security** | Bcrypt password hashing, PyJWT tokens | User login authentication and password security |
 
 ---
 
