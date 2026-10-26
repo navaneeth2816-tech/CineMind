@@ -1,4 +1,5 @@
-const API_BASE = 'https://cinemind-backend-i482.onrender.com/api';
+// Use local backend proxy during 'npm run dev', and production Render URL when deployed
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'https://cinemind-backend-i482.onrender.com/api');
 
 function getAuthHeaders() {
   const token = localStorage.getItem('cinemind_token');
