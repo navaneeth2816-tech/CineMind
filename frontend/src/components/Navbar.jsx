@@ -80,13 +80,12 @@ export default function Navbar({ onSelectMovie }) {
           </div>
           <div>
             <div className="flex items-center space-x-1.5">
-              <span className="text-lg font-black tracking-tight text-white group-hover:text-indigo-400 transition">
+              <span className="text-lg font-bold tracking-tight text-white group-hover:text-indigo-400 transition">
                 CineMind
               </span>
-              
             </div>
-            <p className="text-[10px] text-slate-400 font-medium tracking-tight -mt-0.5 hidden sm:block">
-              Decision Intelligence
+            <p className="text-[10px] text-slate-400 font-medium -mt-0.5 hidden sm:block">
+              Movie Recommendation System
             </p>
           </div>
         </Link>

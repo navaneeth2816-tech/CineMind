@@ -113,167 +113,133 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-16">
-      {/* Hero Banner with Natural Language Search */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-indigo-950/60 via-slate-900 to-slate-950 border border-indigo-900/40 p-6 sm:p-10 shadow-2xl">
-        {/* Glow orb */}
-        <div className="absolute top-0 right-10 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-10 w-80 h-80 bg-violet-600/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="space-y-6 animate-fade-in pb-16">
+      {/* Clean Beginner-Friendly Hero Section */}
+      <section className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-sm">
+        <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-950 border border-indigo-700/50 text-indigo-300 text-xs font-medium">
+          <Film className="w-3.5 h-3.5" />
+          <span>Movie Recommendation & Decision System</span>
+        </div>
 
-        <div className="relative max-w-3xl mx-auto text-center space-y-4">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-600/40 text-indigo-300 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>AI Decision Intelligence • Bayesian Verified Ratings</span>
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          Find What to Watch Next
+        </h1>
+
+        <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
+          Explore movies across Telugu, Tamil, Malayalam, Kannada, Hindi, and English cinema with ratings and personal recommendations.
+        </p>
+
+        {/* Search Bar */}
+        <form onSubmit={handleNlSearch} className="relative max-w-xl mx-auto pt-1">
+          <div className="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden focus-within:border-indigo-500 transition">
+            <Search className="w-4 h-4 text-slate-400 ml-3.5 shrink-0" />
+            <input
+              type="text"
+              value={nlQuery}
+              onChange={(e) => setNlQuery(e.target.value)}
+              placeholder="Search movies (e.g. 'Telugu thriller', 'Inception', 'Hindi comedy')..."
+              className="w-full px-3 py-2.5 text-xs sm:text-sm bg-transparent text-white placeholder-slate-500 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={nlSearching || !nlQuery.trim()}
+              className="mr-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition shrink-0 disabled:opacity-50"
+            >
+              {nlSearching ? 'Searching...' : 'Search'}
+            </button>
           </div>
+        </form>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-            Stop Guessing What to Watch. <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-violet-300 to-pink-400">
-              Decide with Pure Evidence.
-            </span>
-          </h1>
-
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-            CineMind blends authentic MovieLens statistics, rich Indian regional cinema, Bayesian evidence smoothing, and personal Taste DNA to deliver transparent movie intelligence.
-          </p>
-
-          {/* Natural Language Query Bar (PRD Section 6.9) */}
-          <form onSubmit={handleNlSearch} className="relative max-w-2xl mx-auto pt-2">
-            <div className="relative flex items-center bg-slate-950/90 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden focus-within:border-indigo-500 transition">
-              <Search className="w-5 h-5 text-indigo-400 ml-4 shrink-0" />
-              <input
-                type="text"
-                value={nlQuery}
-                onChange={(e) => setNlQuery(e.target.value)}
-                placeholder="Ask in natural language: e.g. 'Find a Telugu thriller under 2 hours with high rating'"
-                className="w-full px-3 py-3.5 text-xs sm:text-sm bg-transparent text-white placeholder-slate-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={nlSearching || !nlQuery.trim()}
-                className="mr-2 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 rounded-xl transition flex items-center space-x-1.5 shrink-0 shadow-lg shadow-indigo-600/30 disabled:opacity-50"
-              >
-                {nlSearching ? (
-                  <span>Parsing...</span>
-                ) : (
-                  <>
-                    <span>Extract & Search</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Quick NL Query Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-[11px] text-slate-400">
-            <span className="text-slate-500">Try queries:</span>
+        {/* Quick Filter Buttons by Regional Language */}
+        <div className="pt-2">
+          <p className="text-[11px] text-slate-500 mb-2 font-medium">Filter by Language:</p>
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
             {[
-              'Telugu action movie under 3 hours',
-              'Malayalam mystery thriller',
-              'Top rated sci-fi movies',
-              'Hindi comedy with high rating'
-            ].map(q => (
+              { label: 'All Cinema', value: '' },
+              { label: 'Telugu', value: 'Telugu' },
+              { label: 'Tamil', value: 'Tamil' },
+              { label: 'Malayalam', value: 'Malayalam' },
+              { label: 'Kannada', value: 'Kannada' },
+              { label: 'Hindi', value: 'Hindi' },
+              { label: 'English', value: 'English' }
+            ].map(l => (
               <button
-                key={q}
+                key={l.label}
                 type="button"
                 onClick={() => {
-                  setNlQuery(q);
-                  api.naturalLanguageSearch(q).then(res => {
-                    setNlResult(res);
-                    if (res.results) {
-                      setMovies(res.results);
-                      setTotalCount(res.match_count);
-                      setTotalPages(1);
-                    }
-                  });
+                  setSelectedLanguage(l.value);
+                  setPage(1);
+                  setNlResult(null);
                 }}
-                className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 transition"
+                className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
+                  selectedLanguage === l.value
+                    ? 'bg-indigo-600 text-white font-bold shadow'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                }`}
               >
-                "{q}"
+                {l.label}
               </button>
             ))}
           </div>
-
-          {/* Natural Language Filter Extraction Card */}
-          {nlResult && (
-            <div className="mt-4 p-4 bg-slate-900/90 border border-indigo-500/40 rounded-2xl text-left text-xs space-y-2 animate-fade-in shadow-xl">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-1.5 text-indigo-400 font-bold">
-                  <Zap className="w-4 h-4" />
-                  <span>Extracted Structured Constraints (PRD Section 6.9)</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={clearNlSearch}
-                  className="flex items-center space-x-1 text-slate-400 hover:text-white"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset to Full Catalogue</span>
-                </button>
-              </div>
-              <div className="text-slate-300 font-medium bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                {nlResult.filter_summary}
-              </div>
-              <div className="flex items-center justify-between text-slate-400 text-[11px]">
-                <span>Found {nlResult.match_count} verified catalogue matches</span>
-                {nlResult.clarifications?.length > 0 && (
-                  <span className="text-amber-400 italic">{nlResult.clarifications[0]}</span>
-                )}
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Search Results Filter Banner if active */}
+        {nlResult && (
+          <div className="mt-3 p-3 bg-slate-950 border border-slate-700 rounded-xl flex items-center justify-between text-xs text-left max-w-xl mx-auto">
+            <span className="text-slate-300">
+              <strong>Active Filter:</strong> {nlResult.filter_summary} ({nlResult.match_count} matches)
+            </span>
+            <button
+              type="button"
+              onClick={clearNlSearch}
+              className="text-xs text-indigo-400 hover:underline ml-2 shrink-0 font-medium"
+            >
+              Clear Filter
+            </button>
+          </div>
+        )}
       </section>
 
-      {/* Personalized Recommendations Row (PRD Section 6.5) */}
+      {/* Recommended Movies Row */}
       {recommendations.length > 0 && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5" />
-              </div>
-              <h2 className="text-lg font-bold text-white tracking-tight">
-                {isAuthenticated ? 'Recommended For You • Calibrated to Taste DNA' : 'Curated Decision Favorites'}
-              </h2>
-            </div>
+            <h2 className="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>Recommended Movies</span>
+            </h2>
             <span className="text-xs text-slate-400">
-              {isAuthenticated ? 'Updated from your ratings' : 'Based on Bayesian consensus'}
+              {isAuthenticated ? 'Based on your Taste DNA' : 'Top audience favorites'}
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {recommendations.map(rec => (
               <div
                 key={rec.movie.id}
                 onClick={() => onOpenDecisionReport(rec.movie.id)}
-                className="group relative bg-slate-900 border border-slate-800 rounded-2xl p-2.5 cursor-pointer hover:border-indigo-500/50 transition duration-300 shadow-lg flex flex-col justify-between"
+                className="bg-slate-900 border border-slate-800 rounded-xl p-2 cursor-pointer hover:border-indigo-500 transition shadow flex flex-col justify-between"
               >
-                <div className="relative aspect-[2/3] rounded-xl overflow-hidden mb-2 bg-slate-950">
+                <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 bg-slate-950">
                   <MoviePoster
                     src={rec.movie.poster_url}
                     alt={rec.movie.title}
                     title={rec.movie.title}
                     year={rec.movie.release_year}
                     language={rec.movie.language}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    className="w-full h-full object-cover"
                   />
-                  {/* Personal Compatibility badge */}
-                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-indigo-950/90 text-indigo-300 font-extrabold text-[10px] border border-indigo-700/60 shadow">
-                    {rec.compatibility_score}% Match
+                  <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/80 text-amber-300 font-bold text-[10px]">
+                    ★ {rec.movie.bayesian_score?.toFixed(1) || rec.movie.rating_mean?.toFixed(1)}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-bold text-white truncate group-hover:text-indigo-400 transition">
+                  <h3 className="text-xs font-semibold text-white truncate">
                     {rec.movie.title}
                   </h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
+                  <p className="text-[10px] text-slate-400">
                     {rec.movie.language} • {rec.movie.release_year}
-                  </p>
-                  <p className="text-[10px] text-indigo-300/80 mt-1 line-clamp-1 italic">
-                    "{rec.primary_reason}"
                   </p>
                 </div>
               </div>
@@ -282,12 +248,12 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
         </section>
       )}
 
-      {/* Main Catalogue Filter Bar (PRD Section 6.1) */}
-      <section className="p-4 sm:p-5 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl space-y-4">
+      {/* Main Catalogue Filter Bar */}
+      <section className="p-4 sm:p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-300">
             <Filter className="w-4 h-4 text-indigo-400" />
-            <span>Catalogue Filters & Controls</span>
+            <span>Movie Catalogue Filters</span>
             <span className="text-[11px] font-normal text-slate-500">({totalCount} titles)</span>
           </div>
 
@@ -492,30 +458,17 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                     {isWatchlisted ? <BookmarkCheck className="w-4 h-4 text-emerald-400" /> : <Bookmark className="w-4 h-4" />}
                   </button>
 
-                  {/* Dual Metrics pill at bottom of poster */}
-                  <div className="absolute bottom-2 left-2 right-2 p-2 bg-slate-950/90 backdrop-blur-md rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="text-[10px] font-semibold text-slate-400 uppercase">Bayesian Rating</div>
-                      <div className="font-extrabold text-amber-400 flex items-center space-x-1">
-                        <span>{m.bayesian_score.toFixed(1)}★</span>
-                        <span className="text-[10px] text-slate-500 font-normal">({m.rating_count})</span>
-                      </div>
+                  {/* Rating badge at bottom of poster */}
+                  <div className="absolute bottom-2 left-2 right-2 px-2.5 py-1.5 bg-slate-950/90 rounded-lg border border-slate-800 flex items-center justify-between text-xs">
+                    <div className="font-bold text-amber-400 flex items-center space-x-1">
+                      <span>★ {m.bayesian_score.toFixed(1)}</span>
+                      <span className="text-[10px] text-slate-400 font-normal">({m.rating_count} reviews)</span>
                     </div>
 
-                    {m.compatibility_score ? (
-                      <div className="text-right">
-                        <div className="text-[10px] font-semibold text-indigo-400 uppercase">Personal Match</div>
-                        <div className="font-extrabold text-indigo-300">
-                          {m.compatibility_score}%
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-right">
-                        <div className="text-[10px] font-semibold text-slate-500 uppercase">Audience Mean</div>
-                        <div className="font-medium text-slate-300 text-xs">
-                          {m.rating_mean.toFixed(1)}★
-                        </div>
-                      </div>
+                    {m.compatibility_score && (
+                      <span className="text-[10px] font-bold text-indigo-300">
+                        {m.compatibility_score}% Match
+                      </span>
                     )}
                   </div>
                 </div>
@@ -543,10 +496,10 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                     <button
                       type="button"
                       onClick={() => onOpenDecisionReport(m.id)}
-                      className="flex-1 py-1.5 px-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition flex items-center justify-center space-x-1 shadow-md shadow-indigo-600/20"
+                      className="flex-1 py-1.5 px-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition flex items-center justify-center space-x-1 shadow-sm"
                     >
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Decision Report</span>
+                      <span>Movie Details</span>
                     </button>
                     <button
                       type="button"

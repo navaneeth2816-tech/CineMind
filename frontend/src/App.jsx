@@ -46,18 +46,16 @@ function AppContent() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/60 py-8 px-4 text-center text-xs text-slate-500 space-y-2 mt-auto">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
+      <footer className="border-t border-slate-900 bg-slate-950/60 py-6 px-4 text-center text-xs text-slate-500 space-y-1.5 mt-auto">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400">
           <span className="font-bold text-slate-300">CineMind</span>
           <span>•</span>
-          <span>Personalised Movie Decision Intelligence Platform</span>
+          <span>Movie Recommendation System</span>
           <span>•</span>
-          <span>Bayesian Trust Analyzer</span>
-          <span>•</span>
-          <span>MovieLens Benchmark Attributed</span>
+          <span>React & Python Flask with MySQL</span>
         </div>
-        <p className="max-w-2xl mx-auto text-[11px] text-slate-600 leading-relaxed">
-          Product Principle: CineMind distinguishes measured facts from model estimates. Compatibility scores are calibrated estimators, not infallible guarantees. All ratings reflect stored database provenance.
+        <p className="max-w-xl mx-auto text-[11px] text-slate-600">
+          A full-stack movie recommendation web application featuring regional cinema discovery, rating comparison, and AI assistant.
         </p>
       </footer>
 

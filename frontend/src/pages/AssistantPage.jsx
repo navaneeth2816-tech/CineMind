@@ -114,9 +114,9 @@ export default function AssistantPage({ onOpenDecisionReport }) {
           <BrainCircuit className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">CineMind Smart Assistant</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">CineMind Movie Assistant</h1>
           <p className="text-xs text-slate-400">
-            API-grounded conversational agent. Factually verified against actual catalogue records and Bayesian evidence.
+            Ask for movie recommendations, comparisons, or ratings across regional cinema.
           </p>
         </div>
       </div>
