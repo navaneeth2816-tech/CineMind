@@ -20,6 +20,9 @@ async function request(endpoint, options = {}) {
     const res = await fetch(`${PRIMARY_API_BASE}${endpoint}`, { ...options, headers });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 502 || res.status === 503) {
+        throw new Error('Local backend server is not running. Please start the Python backend (python run.py).');
+      }
       throw new Error(data.error || data.message || `Request failed with status ${res.status}`);
     }
     return data;
