@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Film, Search, Sparkles, Filter, SlidersHorizontal, Star, 
   Bookmark, BookmarkCheck, ArrowRight, ShieldCheck, 
-  RotateCcw, Scale, Zap, Info
+  RotateCcw, Scale, Zap, Info, X
 } from 'lucide-react';
 import MoviePoster from '../components/MoviePoster';
 
@@ -16,6 +16,15 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
 
   const [movies, setMovies] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
+  const [recMeta, setRecMeta] = useState({
+    isPersonalized: false,
+    hasRatings: false,
+    totalRatings: 0,
+    source: 'audience_favorites',
+    notice: null
+  });
+  const [recLoading, setRecLoading] = useState(false);
+
   const [genresList, setGenresList] = useState([]);
   const [languagesList, setLanguagesList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,10 +39,13 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Natural Language Search state (PRD Section 6.9)
+  // Natural Language Search state - Separated from general recommendations
   const [nlQuery, setNlQuery] = useState('');
+  const [activeSearchQuery, setActiveSearchQuery] = useState('');
   const [nlResult, setNlResult] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
   const [nlSearching, setNlSearching] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   // Load genres and languages
   useEffect(() => {
@@ -53,12 +65,23 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
     }
   }, [searchParams, onOpenDecisionReport]);
 
-  // Load personalized recommendations row
+  // Load personalized recommendations row respecting language and Taste DNA
   useEffect(() => {
-    api.getRecommendations(6)
-      .then(res => setRecommendations(res.recommendations || []))
-      .catch(console.error);
-  }, [user]);
+    setRecLoading(true);
+    api.getRecommendations({ limit: 6, language: selectedLanguage })
+      .then(res => {
+        setRecommendations(res.recommendations || []);
+        setRecMeta({
+          isPersonalized: Boolean(res.is_personalized),
+          hasRatings: Boolean(res.has_ratings),
+          totalRatings: res.total_ratings ?? 0,
+          source: res.source || 'audience_favorites',
+          notice: res.notice || null
+        });
+      })
+      .catch(console.error)
+      .finally(() => setRecLoading(false));
+  }, [user, selectedLanguage]);
 
   // Fetch catalogue movies on filter change
   useEffect(() => {
@@ -82,21 +105,23 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
   }, [page, selectedGenre, selectedLanguage, minRating, maxRuntime, sortBy, user]);
 
   // Natural Language Query submit
-  const handleNlSearch = async (e) => {
+  const handleNlSearch = async (e, langOverride = undefined) => {
     if (e) e.preventDefault();
-    if (!nlQuery.trim()) return;
+    const queryText = nlQuery.trim() || activeSearchQuery.trim();
+    if (!queryText) return;
 
+    const effectiveLang = langOverride !== undefined ? langOverride : selectedLanguage;
     setNlSearching(true);
+    setActiveSearchQuery(queryText);
+    setIsSearchActive(true);
+
     try {
-      const res = await api.naturalLanguageSearch(nlQuery);
+      const res = await api.naturalLanguageSearch(queryText, effectiveLang);
       setNlResult(res);
-      if (res.results) {
-        setMovies(res.results);
-        setTotalCount(res.match_count);
-        setTotalPages(1);
-      }
+      setSearchResults(res.results || []);
     } catch (err) {
       console.error('NL Search error:', err);
+      setSearchResults([]);
     } finally {
       setNlSearching(false);
     }
@@ -104,8 +129,20 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
 
   const clearNlSearch = () => {
     setNlQuery('');
+    setActiveSearchQuery('');
     setNlResult(null);
+    setSearchResults([]);
+    setIsSearchActive(false);
+  };
+
+  // Language filter button handler
+  const handleLanguageSelect = (langValue) => {
+    setSelectedLanguage(langValue);
     setPage(1);
+    // If a search is currently active, update search results to the selected language
+    if (isSearchActive && (nlQuery.trim() || activeSearchQuery.trim())) {
+      handleNlSearch(null, langValue);
+    }
   };
 
   const handleCompareClick = (movieId) => {
@@ -137,9 +174,19 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
               type="text"
               value={nlQuery}
               onChange={(e) => setNlQuery(e.target.value)}
-              placeholder="Search movies (e.g. 'Telugu thriller', 'Inception', 'Hindi comedy')..."
+              placeholder="Search movies (e.g. 'RRR', 'Telugu thriller', 'Drishyam', 'Inception')..."
               className="w-full px-3 py-2.5 text-xs sm:text-sm bg-transparent text-white placeholder-slate-500 focus:outline-none"
             />
+            {nlQuery && (
+              <button
+                type="button"
+                onClick={() => setNlQuery('')}
+                className="text-slate-400 hover:text-white px-2"
+                title="Clear input"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               type="submit"
               disabled={nlSearching || !nlQuery.trim()}
@@ -166,11 +213,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
               <button
                 key={l.label}
                 type="button"
-                onClick={() => {
-                  setSelectedLanguage(l.value);
-                  setPage(1);
-                  setNlResult(null);
-                }}
+                onClick={() => handleLanguageSelect(l.value)}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition ${
                   selectedLanguage === l.value
                     ? 'bg-indigo-600 text-white font-bold shadow'
@@ -182,37 +225,203 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
             ))}
           </div>
         </div>
+      </section>
 
-        {/* Search Results Filter Banner if active */}
-        {nlResult && (
-          <div className="mt-3 p-3 bg-slate-950 border border-slate-700 rounded-xl flex items-center justify-between text-xs text-left max-w-xl mx-auto">
-            <span className="text-slate-300">
-              <strong>Active Filter:</strong> {nlResult.filter_summary} ({nlResult.match_count} matches)
-            </span>
+      {/* SEPARATE SECTION 1: SEARCH RESULTS (Shown when user searches) */}
+      {isSearchActive && (
+        <section className="space-y-4 p-5 bg-slate-900 border border-indigo-900/60 rounded-2xl shadow-lg animate-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+            <div className="flex items-center space-x-2">
+              <Search className="w-4 h-4 text-indigo-400" />
+              <h2 className="text-base sm:text-lg font-bold text-white">
+                Search Results {selectedLanguage ? `in ${selectedLanguage}` : ''}
+              </h2>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-950 border border-indigo-800 text-indigo-300 font-medium">
+                {searchResults.length} {searchResults.length === 1 ? 'match' : 'matches'}
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={clearNlSearch}
-              className="text-xs text-indigo-400 hover:underline ml-2 shrink-0 font-medium"
+              className="px-3 py-1 text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg border border-slate-700 transition flex items-center space-x-1"
             >
-              Clear Filter
+              <X className="w-3.5 h-3.5" />
+              <span>Clear Search</span>
             </button>
           </div>
-        )}
-      </section>
 
-      {/* Recommended Movies Row */}
-      {recommendations.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Recommended Movies</span>
-            </h2>
-            <span className="text-xs text-slate-400">
-              {isAuthenticated ? 'Based on your Taste DNA' : 'Top audience favorites'}
-            </span>
+          {/* Active search filter badge */}
+          {nlResult && (
+            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
+              <span className="text-slate-300">
+                <strong className="text-indigo-300">Active Query:</strong> &ldquo;{activeSearchQuery}&rdquo;
+                {nlResult.filter_summary && (
+                  <span className="text-slate-400 ml-2">({nlResult.filter_summary})</span>
+                )}
+                {selectedLanguage && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-800 font-medium">
+                    Language: {selectedLanguage}
+                  </span>
+                )}
+              </span>
+              <span className="text-slate-400 shrink-0">
+                {searchResults.length} {searchResults.length === 1 ? 'film found' : 'films found'}
+              </span>
+            </div>
+          )}
+
+          {/* Clarifications / Notes when 0 matches found */}
+          {nlResult?.clarifications?.length > 0 && searchResults.length === 0 && (
+            <div className="p-4 bg-amber-950/40 border border-amber-900/60 rounded-xl text-xs text-amber-200 space-y-1">
+              <p className="font-semibold flex items-center space-x-1">
+                <Info className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Search Guidance:</span>
+              </p>
+              {nlResult.clarifications.map((msg, idx) => (
+                <p key={idx} className="text-amber-300/90 pl-5">{msg}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Search Results Grid */}
+          {nlSearching ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2 animate-pulse">
+                  <div className="aspect-[2/3] bg-slate-800 rounded-lg" />
+                  <div className="h-4 bg-slate-800 rounded w-3/4" />
+                </div>
+              ))}
+            </div>
+          ) : searchResults.length === 0 ? (
+            <div className="p-8 text-center bg-slate-950/60 border border-slate-800/80 rounded-xl space-y-2">
+              <Info className="w-6 h-6 text-slate-500 mx-auto" />
+              <p className="text-sm font-semibold text-white">No search results found</p>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                No movies matched &ldquo;{activeSearchQuery}&rdquo; {selectedLanguage ? `under ${selectedLanguage} cinema` : ''}.
+              </p>
+              {selectedLanguage && (
+                <button
+                  type="button"
+                  onClick={() => handleLanguageSelect('')}
+                  className="mt-2 px-3 py-1.5 text-xs text-indigo-400 bg-indigo-950 border border-indigo-800 rounded-lg hover:bg-indigo-900 transition"
+                >
+                  Search Across All Cinema
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {searchResults.map(m => {
+                const isWatchlisted = watchlistIds.has(m.id);
+                return (
+                  <div
+                    key={m.id}
+                    className="group relative bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-xl p-3 transition duration-300 shadow flex flex-col justify-between"
+                  >
+                    <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-2.5 bg-slate-900">
+                      <MoviePoster
+                        src={m.poster_url}
+                        alt={m.title}
+                        title={m.title}
+                        year={m.release_year}
+                        language={m.language}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      />
+                      <div className="absolute top-2 left-2">
+                        <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-slate-950/90 text-white rounded border border-slate-700/60 shadow">
+                          {m.language}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleWatchlist(m.id);
+                        }}
+                        className={`absolute top-2 right-2 p-1.5 rounded-lg border shadow transition ${
+                          isWatchlisted
+                            ? 'bg-emerald-950/90 border-emerald-600 text-emerald-300'
+                            : 'bg-slate-950/80 border-slate-700 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        {isWatchlisted ? <BookmarkCheck className="w-3.5 h-3.5 text-emerald-400" /> : <Bookmark className="w-3.5 h-3.5" />}
+                      </button>
+                      <div className="absolute bottom-2 left-2 right-2 px-2 py-1 bg-slate-950/90 rounded border border-slate-800 flex items-center justify-between text-xs">
+                        <span className="font-bold text-amber-400">★ {m.bayesian_score?.toFixed(1) || m.rating_mean?.toFixed(1)}</span>
+                        <span className="text-[10px] text-slate-400">{m.release_year}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <h3 className="font-bold text-xs text-white group-hover:text-indigo-400 transition truncate">
+                        {m.title}
+                      </h3>
+                      <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">
+                        {m.overview}
+                      </p>
+                      <div className="pt-2 flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => onOpenDecisionReport(m.id)}
+                          className="flex-1 py-1 px-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition flex items-center justify-center space-x-1"
+                        >
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>Movie Details</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCompareClick(m.id)}
+                          className="p-1 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition"
+                          title="Compare movie"
+                        >
+                          <Scale className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* SEPARATE SECTION 2: RECOMMENDED MOVIES (General recommendations, respecting Taste DNA & language) */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>Recommended Movies {selectedLanguage ? `(${selectedLanguage})` : ''}</span>
+          </h2>
+
+          <div className="text-xs">
+            {!isAuthenticated ? (
+              <span className="text-slate-400">Top audience favorites</span>
+            ) : recMeta.hasRatings && recMeta.totalRatings > 0 ? (
+              <span className="text-slate-400">
+                Based on your Taste DNA ({recMeta.totalRatings} {recMeta.totalRatings === 1 ? 'rating' : 'ratings'})
+              </span>
+            ) : (
+              <span className="text-amber-400 font-medium bg-amber-950/40 border border-amber-800/50 px-2 py-0.5 rounded-md">
+                Using default preferences • 0 ratings recorded
+              </span>
+            )}
           </div>
+        </div>
 
+        {recLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-slate-900 border border-slate-800 rounded-xl p-2 h-44 animate-pulse" />
+            ))}
+          </div>
+        ) : recommendations.length === 0 ? (
+          <div className="p-6 text-center bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-400">
+            No recommended movies available for {selectedLanguage || 'this filter'}. Try selecting &ldquo;All Cinema&rdquo;.
+          </div>
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {recommendations.map(rec => (
               <div
@@ -241,20 +450,27 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                   <p className="text-[10px] text-slate-400">
                     {rec.movie.language} • {rec.movie.release_year}
                   </p>
+                  {rec.compatibility_score && (
+                    <p className="text-[10px] text-indigo-400 font-medium">
+                      {rec.compatibility_score}% Match
+                    </p>
+                  )}
                 </div>
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
-      {/* Main Catalogue Filter Bar */}
+      {/* SEPARATE SECTION 3: MOVIE CATALOGUE FILTERS & GRID */}
       <section className="p-4 sm:p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-300">
             <Filter className="w-4 h-4 text-indigo-400" />
             <span>Movie Catalogue Filters</span>
-            <span className="text-[11px] font-normal text-slate-500">({totalCount} titles)</span>
+            <span className="text-[11px] font-normal text-slate-500">
+              ({totalCount} {selectedLanguage ? `${selectedLanguage} ` : ''}titles)
+            </span>
           </div>
 
           <div className="flex items-center space-x-2 text-xs">
@@ -298,7 +514,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
             </label>
             <select
               value={selectedLanguage}
-              onChange={(e) => { setSelectedLanguage(e.target.value); setPage(1); }}
+              onChange={(e) => handleLanguageSelect(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded-xl px-3 py-2 focus:border-indigo-500 focus:outline-none"
             >
               <option value="">All Languages</option>
@@ -355,8 +571,8 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
             )}
             {selectedLanguage && (
               <span className="px-2 py-0.5 text-[11px] bg-violet-950 text-violet-300 rounded-md border border-violet-800 flex items-center space-x-1">
-                <span>{selectedLanguage}</span>
-                <button onClick={() => setSelectedLanguage('')}>×</button>
+                <span>{selectedLanguage} Cinema</span>
+                <button onClick={() => handleLanguageSelect('')}>×</button>
               </span>
             )}
             {minRating > 0 && (
@@ -374,7 +590,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
             <button
               onClick={() => {
                 setSelectedGenre('');
-                setSelectedLanguage('');
+                handleLanguageSelect('');
                 setMinRating(0);
                 setMaxRuntime(200);
               }}
@@ -407,7 +623,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
           <button
             onClick={() => {
               setSelectedGenre('');
-              setSelectedLanguage('');
+              handleLanguageSelect('');
               setMinRating(0);
               setMaxRuntime(200);
             }}
@@ -461,7 +677,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                   {/* Rating badge at bottom of poster */}
                   <div className="absolute bottom-2 left-2 right-2 px-2.5 py-1.5 bg-slate-950/90 rounded-lg border border-slate-800 flex items-center justify-between text-xs">
                     <div className="font-bold text-amber-400 flex items-center space-x-1">
-                      <span>★ {m.bayesian_score.toFixed(1)}</span>
+                      <span>★ {m.bayesian_score?.toFixed(1) || m.rating_mean?.toFixed(1)}</span>
                       <span className="text-[10px] text-slate-400 font-normal">({m.rating_count} reviews)</span>
                     </div>
 

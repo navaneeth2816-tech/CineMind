@@ -16,30 +16,43 @@ GENRES = [
     'Sci-Fi', 'Thriller', 'Biography', 'History'
 ]
 
-def parse_natural_language_query(query_text: str):
+COMMON_STOPWORDS = {
+    'find', 'me', 'a', 'an', 'the', 'movie', 'movies', 'film', 'films',
+    'show', 'watch', 'good', 'best', 'top', 'recommend', 'please',
+    'with', 'having', 'about', 'like', 'in', 'of', 'for'
+}
+
+def normalize_text(text: str) -> str:
+    """Removes special characters and lowercases text for fuzzy matching"""
+    return re.sub(r'[^a-z0-9\s]', ' ', text.lower()).strip()
+
+def parse_natural_language_query(query_text: str, language_filter: str = None):
     """
-    Parses natural language requests into structured catalogue filters (PRD Section 6.9):
-    Example: 'Find a Telugu thriller under two hours with a high audience rating'
+    Parses natural language requests into structured catalogue filters (PRD Section 6.9).
+    Respects language filters from UI or query, matches genres, runtimes, ratings,
+    and supports title/keyword search.
     """
     if not query_text or not query_text.strip():
         return {
             'original_query': query_text or '',
             'parsed_entities': {
-                'language': None,
+                'language': language_filter,
                 'genres': [],
+                'matched_title': None,
+                'search_keyword': None,
                 'max_runtime': None,
                 'min_rating': None,
                 'min_year': None,
                 'max_year': None
             },
-            'filter_summary': 'No query provided',
+            'filter_summary': f"Language: {language_filter}" if language_filter else 'No query provided',
             'match_count': 0,
-            'clarifications': ['Please enter a query (e.g. "Telugu thrillers under 2 hours").'],
+            'clarifications': ['Please enter a query (e.g. "Telugu thrillers under 2 hours", "RRR", "Drishyam").'],
             'results': []
         }
 
     q_lower = query_text.lower()
-    # Normalize common word numbers
+    # Normalize common word numbers (e.g. 'two hours' -> '2 hours')
     word_to_num = {'one': '1', 'two': '2', 'three': '3', 'four': '4'}
     for word, num in word_to_num.items():
         q_lower = re.sub(r'\b' + word + r'\s+hour', f'{num} hour', q_lower)
@@ -47,6 +60,8 @@ def parse_natural_language_query(query_text: str):
     extracted = {
         'language': None,
         'genres': [],
+        'matched_title': None,
+        'search_keyword': None,
         'max_runtime': None,
         'min_rating': None,
         'min_year': None,
@@ -55,14 +70,16 @@ def parse_natural_language_query(query_text: str):
     clarifications = []
 
     # 1. Language detection
-    for key, lang in LANGUAGES.items():
-        if re.search(r'\b' + key + r'\b', q_lower):
-            extracted['language'] = lang
-            break
+    if language_filter:
+        extracted['language'] = language_filter
+    else:
+        for key, lang in LANGUAGES.items():
+            if re.search(r'\b' + key + r'\b', q_lower):
+                extracted['language'] = lang
+                break
 
     # 2. Genre detection
     for g in GENRES:
-        # Match singular or plural or variations
         pattern = r'\b' + re.escape(g.lower()) + r'(s)?\b'
         if g.lower() == 'sci-fi':
             pattern = r'\b(sci-fi|scifi|science\s+fiction)\b'
@@ -72,8 +89,7 @@ def parse_natural_language_query(query_text: str):
         if re.search(pattern, q_lower):
             extracted['genres'].append(g)
 
-    # 3. Runtime extraction
-    # Patterns: 'under 2 hours', 'less than 120 minutes', 'under 90 mins', 'within 2.5 hours'
+    # 3. Runtime extraction (e.g. 'under 2 hours', 'less than 120 mins')
     runtime_hour_match = re.search(r'(?:under|less\s+than|within|below)\s+(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs)', q_lower)
     if runtime_hour_match:
         hours = float(runtime_hour_match.group(1))
@@ -83,21 +99,19 @@ def parse_natural_language_query(query_text: str):
         if runtime_min_match:
             extracted['max_runtime'] = int(runtime_min_match.group(1))
 
-    # 4. Rating threshold extraction
-    # "high rating", "top rated", "critically acclaimed", "above 4 stars", "above 8/10", "above 8"
+    # 4. Rating threshold extraction ('high rating', 'above 4 stars')
     if re.search(r'\b(high(?:est)?\s+rating|top\s+rated|critically\s+acclaimed|great|best)\b', q_lower):
         extracted['min_rating'] = 3.8
     
     rating_num_match = re.search(r'(?:above|over|at\s+least|min(?:imum)?)\s+(\d+(?:\.\d+)?)\s*(?:stars?|/10|/5)?', q_lower)
     if rating_num_match:
         val = float(rating_num_match.group(1))
-        if val > 5.0 and val <= 10.0:
-            extracted['min_rating'] = round(val / 2.0, 1) # scale 10 to 5
+        if 5.0 < val <= 10.0:
+            extracted['min_rating'] = round(val / 2.0, 1)
         elif val <= 5.0:
             extracted['min_rating'] = val
 
     # 5. Era / Year extraction
-    # "after 2020", "since 2018", "classic", "90s"
     year_match = re.search(r'(?:after|since|from|newer\s+than)\s+(\d{4})', q_lower)
     if year_match:
         extracted['min_year'] = int(year_match.group(1))
@@ -113,10 +127,45 @@ def parse_natural_language_query(query_text: str):
         extracted['min_year'] = 1990
         extracted['max_year'] = 1999
 
+    # 6. Title / Free-text keyword search
+    q_norm = normalize_text(query_text)
+    all_movies = Movie.query.all()
+    matched_movie = None
+
+    for m in all_movies:
+        m_norm = normalize_text(m.title)
+        # Check if title is in query or query is title
+        if m_norm and (m_norm in q_norm or q_norm == m_norm):
+            matched_movie = m
+            break
+        # Also check significant title parts (e.g. 'dark knight' in 'the dark knight')
+        m_parts = [p for p in m_norm.split() if p not in {'the', 'a', 'an', 'part', 'chapter', '2', '1'}]
+        if m_parts and len(' '.join(m_parts)) >= 3 and ' '.join(m_parts) in q_norm:
+            matched_movie = m
+            break
+
+    if matched_movie:
+        extracted['matched_title'] = matched_movie.title
+    else:
+        # Extract remaining search keywords by stripping out detected parameters and stopwords
+        tokens = [w for w in q_norm.split() if w not in COMMON_STOPWORDS]
+        # Remove language words
+        tokens = [w for w in tokens if w not in LANGUAGES]
+        # Remove genre words
+        tokens = [w for w in tokens if w not in {g.lower() for g in GENRES}]
+        # Remove number words
+        tokens = [w for w in tokens if not w.isdigit()]
+        if tokens:
+            extracted['search_keyword'] = " ".join(tokens)
+
     # Build human summary of applied filters
     summary_parts = []
     if extracted['language']:
         summary_parts.append(f"Language: {extracted['language']}")
+    if extracted['matched_title']:
+        summary_parts.append(f"Title: '{extracted['matched_title']}'")
+    elif extracted['search_keyword']:
+        summary_parts.append(f"Keyword: '{extracted['search_keyword']}'")
     if extracted['genres']:
         summary_parts.append(f"Genre(s): {', '.join(extracted['genres'])}")
     if extracted['max_runtime']:
@@ -128,7 +177,7 @@ def parse_natural_language_query(query_text: str):
     if extracted['max_year']:
         summary_parts.append(f"Released: ≤ {extracted['max_year']}")
 
-    summary = " | ".join(summary_parts) if summary_parts else "General search (no strict constraint detected)"
+    summary = " | ".join(summary_parts) if summary_parts else f"Search: '{query_text}'"
 
     # Query database
     query = Movie.query
@@ -138,6 +187,17 @@ def parse_natural_language_query(query_text: str):
     if extracted['genres']:
         for g_name in extracted['genres']:
             query = query.filter(Movie.genres.any(Genre.name == g_name))
+
+    if extracted['matched_title']:
+        query = query.filter(Movie.title == extracted['matched_title'])
+    elif extracted['search_keyword']:
+        kw = extracted['search_keyword']
+        query = query.filter(
+            db.or_(
+                Movie.title.ilike(f"%{kw}%"),
+                Movie.overview.ilike(f"%{kw}%")
+            )
+        )
             
     if extracted['max_runtime']:
         query = query.filter(Movie.runtime_minutes <= extracted['max_runtime'])
@@ -153,8 +213,17 @@ def parse_natural_language_query(query_text: str):
 
     results = query.order_by(Movie.bayesian_score.desc()).all()
 
+    # Intelligent explanations when 0 results found
     if not results:
-        clarifications.append("No exact matches found. You could try removing the runtime limit or relaxing the rating threshold.")
+        if extracted['matched_title'] and extracted['language']:
+            # Check if this title exists in another language
+            cross_lang_movie = Movie.query.filter(Movie.title == extracted['matched_title']).first()
+            if cross_lang_movie and cross_lang_movie.language != extracted['language']:
+                clarifications.append(
+                    f"'{cross_lang_movie.title}' is a {cross_lang_movie.language} cinema film, so it does not match your active '{extracted['language']}' language filter."
+                )
+        if not clarifications:
+            clarifications.append("No exact matches found for these filters. Try clearing the language filter or relaxing runtime/rating constraints.")
 
     return {
         'original_query': query_text,

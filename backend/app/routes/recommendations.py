@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, UserPreference, User, Movie
+from app.models import db, UserPreference, User, Movie, Rating
 from app.services.auth_service import auth_required, optional_auth
 from app.services.recommender_service import get_personal_recommendations
 
@@ -10,21 +10,43 @@ recommendations_bp = Blueprint('recommendations', __name__)
 def get_recommendations(user):
     """
     Returns explainable personal recommendations (PRD Section 6.5, 6.7)
-    Falls back to high Bayesian score titles for guests/cold start.
+    Respects language filters, user Taste DNA, and excluded genres.
+    Falls back to high Bayesian score titles for guests or zero-rating users.
     """
     limit = int(request.args.get('limit', 10))
     exclude_rated = request.args.get('exclude_rated', 'true').lower() == 'true'
+    language = request.args.get('language', None)
+    if language:
+        language = language.strip()
+        if language.lower() in ('', 'all', 'all cinema'):
+            language = None
 
     if user:
-        recommendations = get_personal_recommendations(user.id, limit=limit, exclude_rated=exclude_rated)
+        rating_count = Rating.query.filter_by(user_id=user.id).count()
+        pref_count = UserPreference.query.filter_by(user_id=user.id).count()
+        has_ratings = rating_count > 0
+
+        recommendations = get_personal_recommendations(
+            user.id,
+            limit=limit,
+            exclude_rated=exclude_rated,
+            language=language
+        )
         return jsonify({
             'recommendations': recommendations,
-            'is_personalized': True,
+            'is_personalized': has_ratings or (pref_count > 0),
+            'has_ratings': has_ratings,
+            'total_ratings': rating_count,
+            'source': 'taste_dna' if has_ratings else ('onboarding_preferences' if pref_count > 0 else 'default_preferences'),
+            'notice': None if has_ratings else 'Using default preferences (0 ratings recorded)',
             'count': len(recommendations)
         }), 200
 
     # Guest / Baseline recommendations based on Bayesian weighted score
-    top_movies = Movie.query.order_by(Movie.bayesian_score.desc()).limit(limit).all()
+    query = Movie.query
+    if language:
+        query = query.filter(Movie.language == language)
+    top_movies = query.order_by(Movie.bayesian_score.desc()).limit(limit).all()
     baseline = []
     for m in top_movies:
         # Dynamic baseline compatibility score grounded in Bayesian score
@@ -39,6 +61,10 @@ def get_recommendations(user):
     return jsonify({
         'recommendations': baseline,
         'is_personalized': False,
+        'has_ratings': False,
+        'total_ratings': 0,
+        'source': 'audience_favorites',
+        'notice': 'Showing top audience favorites',
         'count': len(baseline)
     }), 200
 

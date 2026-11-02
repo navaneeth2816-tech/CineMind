@@ -152,8 +152,26 @@ def build_user_vector(user_id: int, all_genres: list):
 def calculate_compatibility_score(user_id: int, movie: Movie) -> int:
     """
     Computes Personal Movie Compatibility Score (0 - 100%) (PRD 6.5)
-    Distinct from general rating.
+    Distinct from general rating. Strictly respects excluded genres.
     """
+    user = User.query.get(user_id) if user_id else None
+    if not user:
+        base = (movie.bayesian_score / 5.0) * 80.0
+        return int(max(40, min(85, base)))
+
+    # Strictly check excluded genres: return 0% if any genre is excluded
+    user_ex = set()
+    if user.excluded_genres:
+        user_ex.update({x.strip().lower() for x in user.excluded_genres.split(',') if x.strip()})
+    for up in UserPreference.query.filter_by(user_id=user_id).all():
+        if up.preference_type in ('excluded_genre', 'exclude_genre') or up.weight <= -0.5:
+            user_ex.add(up.preference_value.strip().lower())
+
+    if user_ex:
+        movie_genres = {g.name.lower() for g in movie.genres}
+        if movie_genres.intersection(user_ex):
+            return 0
+
     all_genres = get_all_genres()
     user_vec = build_user_vector(user_id, all_genres)
     
@@ -171,9 +189,10 @@ def calculate_compatibility_score(user_id: int, movie: Movie) -> int:
     scaled = int(round(50 + (sim * 50)))
     return max(15, min(99, scaled))
 
-def get_personal_recommendations(user_id: int, limit: int = 12, exclude_rated: bool = True):
+def get_personal_recommendations(user_id: int, limit: int = 12, exclude_rated: bool = True, language: str = None):
     """
     Generates explainable personalized movie recommendations (PRD Section 6.5, 6.7)
+    Respects language filters, user Taste DNA, and excluded genres.
     """
     user = User.query.get(user_id)
     if not user:
@@ -194,7 +213,18 @@ def get_personal_recommendations(user_id: int, limit: int = 12, exclude_rated: b
     for pl in UserPreference.query.filter_by(user_id=user_id, preference_type='language').all():
         preferred_languages.add(pl.preference_value)
 
-    movies = Movie.query.all()
+    # Compile all excluded genres
+    user_ex = set()
+    if user.excluded_genres:
+        user_ex.update({x.strip().lower() for x in user.excluded_genres.split(',') if x.strip()})
+    for up in UserPreference.query.filter_by(user_id=user_id).all():
+        if up.preference_type in ('excluded_genre', 'exclude_genre') or up.weight <= -0.5:
+            user_ex.add(up.preference_value.strip().lower())
+
+    movie_query = Movie.query
+    if language:
+        movie_query = movie_query.filter(Movie.language == language)
+    movies = movie_query.all()
     candidates = []
 
     for m in movies:
@@ -202,8 +232,7 @@ def get_personal_recommendations(user_id: int, limit: int = 12, exclude_rated: b
             continue
         
         # Check user excluded genres
-        if user.excluded_genres:
-            user_ex = {x.strip().lower() for x in user.excluded_genres.split(',')}
+        if user_ex:
             movie_genres = {g.name.lower() for g in m.genres}
             if movie_genres.intersection(user_ex):
                 continue

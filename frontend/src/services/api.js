@@ -70,8 +70,15 @@ export const api = {
   getLanguages: () => request('/movies/languages'),
 
   // Search
-  searchAutocomplete: (q) => request(`/movies/search?q=${encodeURIComponent(q)}`),
-  naturalLanguageSearch: (query) => request('/search/natural-language', { method: 'POST', body: JSON.stringify({ query }) }),
+  searchAutocomplete: (q, language = '') => {
+    const params = new URLSearchParams({ q });
+    if (language) params.append('language', language);
+    return request(`/movies/search?${params.toString()}`);
+  },
+  naturalLanguageSearch: (query, language = '') => request('/search/natural-language', { 
+    method: 'POST', 
+    body: JSON.stringify({ query, language }) 
+  }),
 
   // User
   getTasteProfile: () => request('/me/taste-profile'),
@@ -84,7 +91,21 @@ export const api = {
   clearHistory: () => request('/me/history', { method: 'DELETE' }),
 
   // Recommendations & Onboarding
-  getRecommendations: (limit = 10) => request(`/recommendations?limit=${limit}`),
+  getRecommendations: (params = 10, maybeLang = '') => {
+    let limit = 10;
+    let language = '';
+    if (typeof params === 'object' && params !== null) {
+      limit = params.limit || 10;
+      language = params.language || '';
+    } else {
+      limit = params || 10;
+      language = maybeLang || '';
+    }
+    const q = new URLSearchParams();
+    if (limit) q.append('limit', limit);
+    if (language) q.append('language', language);
+    return request(`/recommendations?${q.toString()}`);
+  },
   saveOnboardingPreferences: (payload) => request('/recommendations/onboarding/preferences', { method: 'POST', body: JSON.stringify(payload) }),
 
   // Smart Assistant

@@ -6,14 +6,24 @@ search_bp = Blueprint('search', __name__)
 
 @search_bp.route('/movies/search', methods=['GET'])
 def search_movies():
-    """Live search and autocomplete suggestions (PRD Section 6.1)"""
+    """Live search and autocomplete suggestions (PRD Section 6.1) with optional language filter"""
     q = request.args.get('q', '').strip()
+    language = request.args.get('language', None)
+    if language:
+        language = language.strip()
+        if language.lower() in ('', 'all', 'all cinema'):
+            language = None
+
     if not q:
         return jsonify({'results': []}), 200
 
-    movies = Movie.query.filter(
+    query = Movie.query.filter(
         Movie.title.ilike(f"%{q}%")
-    ).order_by(Movie.bayesian_score.desc()).limit(8).all()
+    )
+    if language:
+        query = query.filter(Movie.language == language)
+
+    movies = query.order_by(Movie.bayesian_score.desc()).limit(8).all()
 
     return jsonify({
         'results': [
@@ -34,12 +44,18 @@ def search_movies():
 def natural_language_search():
     """
     Parses requests like 'Find a Telugu thriller under two hours with a high audience rating' (PRD 6.9)
+    Respects language filters passed from UI or extracted from query.
     """
     data = request.get_json() or {}
     query = data.get('query', '').strip()
+    language = data.get('language', None) or request.args.get('language', None)
+    if language:
+        language = language.strip()
+        if language.lower() in ('', 'all', 'all cinema'):
+            language = None
 
     if not query:
         return jsonify({'error': 'Query text is required.'}), 400
 
-    parsed_result = parse_natural_language_query(query)
+    parsed_result = parse_natural_language_query(query, language_filter=language)
     return jsonify(parsed_result), 200
