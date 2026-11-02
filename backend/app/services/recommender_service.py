@@ -255,6 +255,11 @@ def get_personal_recommendations(user_id: int, limit: int = 12, exclude_rated: b
 
         candidates.append({
             'movie': m.to_dict(),
+            'movie_title': m.title,
+            'average_rating': round(m.rating_mean, 2) if m.rating_mean else 0.0,
+            'number_of_ratings': int(m.rating_count or 0),
+            'recommendation_score': compatibility,
+            'recommendation_reason': reasons[0] if reasons else "Recommended title",
             'compatibility_score': compatibility,
             'primary_reason': reasons[0] if reasons else "Recommended title",
             'all_reasons': reasons

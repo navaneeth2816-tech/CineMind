@@ -444,15 +444,26 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-semibold text-white truncate">
+                  <h3 className="text-xs font-semibold text-white truncate" title={rec.movie.title}>
                     {rec.movie.title}
                   </h3>
-                  <p className="text-[10px] text-slate-400">
-                    {rec.movie.language} • {rec.movie.release_year}
-                  </p>
-                  {rec.compatibility_score && (
-                    <p className="text-[10px] text-indigo-400 font-medium">
-                      {rec.compatibility_score}% Match
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5">
+                    <span>{rec.movie.language} • {rec.movie.release_year}</span>
+                    <span className="text-slate-400">({rec.movie.rating_count || rec.number_of_ratings || 0} reviews)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] mt-1 pt-1 border-t border-slate-800/60">
+                    <span className="text-amber-400 font-bold">
+                      ★ {(rec.movie.rating_mean || rec.average_rating || 0).toFixed(1)} avg
+                    </span>
+                    {(rec.compatibility_score || rec.recommendation_score) && (
+                      <span className="text-indigo-400 font-bold">
+                        {rec.compatibility_score || rec.recommendation_score}% Match
+                      </span>
+                    )}
+                  </div>
+                  {(rec.primary_reason || rec.recommendation_reason) && (
+                    <p className="text-[9px] text-slate-400 italic line-clamp-1 mt-1" title={rec.primary_reason || rec.recommendation_reason}>
+                      {rec.primary_reason || rec.recommendation_reason}
                     </p>
                   )}
                 </div>

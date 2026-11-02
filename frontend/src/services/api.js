@@ -125,7 +125,7 @@ export const api = {
   },
 
   // Analytics
-  getRatingAnalytics: () => request('/analytics/ratings'),
+  getRatingAnalytics: (minRatings = 5) => request(`/analytics/ratings?min_ratings=${encodeURIComponent(minRatings)}`),
   getRegionalAnalytics: () => request('/analytics/regional'),
 
   // Admin

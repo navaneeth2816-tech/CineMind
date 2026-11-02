@@ -51,10 +51,17 @@ def get_recommendations(user):
     for m in top_movies:
         # Dynamic baseline compatibility score grounded in Bayesian score
         guest_score = int(round((m.bayesian_score / 5.0) * 88))
+        score = max(50, min(95, guest_score))
+        reason = f"Consensus favorite ({m.bayesian_score:.1f}★ Bayesian score with {m.rating_count} reviews)"
         baseline.append({
             'movie': m.to_dict(),
-            'compatibility_score': max(50, min(95, guest_score)),
-            'primary_reason': f"Consensus favorite ({m.bayesian_score:.1f}★ Bayesian score with {m.rating_count} reviews)",
+            'movie_title': m.title,
+            'average_rating': round(m.rating_mean, 2) if m.rating_mean else 0.0,
+            'number_of_ratings': int(m.rating_count or 0),
+            'recommendation_score': score,
+            'recommendation_reason': reason,
+            'compatibility_score': score,
+            'primary_reason': reason,
             'all_reasons': [f"Rated {m.rating_mean:.1f}/5.0 by general audience"]
         })
 
