@@ -55,21 +55,47 @@ def create_app(config_class=Config):
     def internal_error(error):
         return jsonify({'error': 'Internal Server Error', 'message': 'An unexpected server error occurred.'}), 500
 
+    from sqlalchemy.exc import SQLAlchemyError
+    @app.errorhandler(SQLAlchemyError)
+    def handle_database_error(error):
+        app.logger.error(f"Database error: {str(error)}")
+        db.session.rollback()
+        return jsonify({'error': 'Database Error', 'message': 'A database error occurred. Please try again.'}), 500
+
     @app.route('/api/health', methods=['GET'])
     def health_check():
-        return jsonify({
-            'status': 'healthy',
-            'product': 'CineMind API',
-            'version': '2.0.0'
-        }), 200
+        db_status = 'connected'
+        driver_name = 'unknown'
+        try:
+            from sqlalchemy import text
+            db.session.execute(text("SELECT 1"))
+            driver_name = db.engine.url.drivername
+        except Exception as e:
+            db_status = f'disconnected: {str(e)}'
 
-    # Auto-seed database if movies table is empty
+        return jsonify({
+            'status': 'healthy' if db_status == 'connected' else 'degraded',
+            'product': 'CineMind API',
+            'version': '2.0.0',
+            'database': {
+                'status': db_status,
+                'driver': driver_name
+            }
+        }), 200 if db_status == 'connected' else 503
+
+    # Verify database connectivity and auto-seed if movies table is empty
     with app.app_context():
-        from app.services.seed_data import seed_database
-        from app.models import Movie
-        db.create_all()
-        if Movie.query.count() == 0:
-            print("Empty movie catalogue detected. Seeding benchmark & regional dataset...")
-            seed_database()
+        try:
+            from sqlalchemy import text
+            from app.services.seed_data import seed_database
+            from app.models import Movie
+            db.session.execute(text("SELECT 1"))
+            db.create_all()
+            if Movie.query.count() == 0:
+                print("Empty movie catalogue detected. Seeding benchmark & regional dataset...")
+                seed_database()
+        except Exception as e:
+            app.logger.error(f"Database connection error: {e}")
+            print(f"[ERROR] Database connection failed: {e}")
 
     return app

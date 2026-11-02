@@ -238,7 +238,7 @@ def create_deck(output_path="CineMind_Project_Presentation.pptx"):
             "• Relational schema with 12 normalized tables.",
             "• 25 Benchmark films with verified TMDB posters.",
             "• 1,890 Authentic rating records & user accounts.",
-            "• SQLAlchemy ORM + PyMySQL driver with connection pooling.",
+            "• SQLAlchemy ORM + MySQL Connector/Python driver with connection pooling.",
             "• Foreign key constraints with CASCADE rules."
         ], Inches(8.7), ACCENT_CYAN)
     ]

@@ -301,7 +301,7 @@ if __name__ == "__main__":
     if not mysql_conn or not mysql_conn.startswith("mysql"):
         print("Usage:")
         print("  Set DATABASE_URL in backend/.env to your MySQL URI:")
-        print("  DATABASE_URL=mysql+pymysql://<user>:<password>@<host>:3306/<database>")
+        print("  DATABASE_URL=mysql+mysqlconnector://<user>:<password>@<host>:3306/<database>")
         print("  Then run: python migrate_to_mysql.py")
         sys.exit(1)
 
