@@ -400,73 +400,113 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {candidates.map((c, idx) => {
                 const isWinner = idx === 0;
                 return (
                   <div
                     key={c.movie.id}
-                    className={`relative bg-slate-900 border rounded-2xl p-4 shadow-xl flex flex-col justify-between space-y-4 transition ${
-                      isWinner ? 'border-amber-500/60 shadow-amber-500/10' : 'border-slate-800'
+                    className={`relative bg-slate-900 border rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between transition overflow-hidden ${
+                      isWinner
+                        ? 'border-amber-500/80 shadow-amber-500/10 ring-1 ring-amber-500/30'
+                        : 'border-slate-800 hover:border-slate-700'
                     }`}
                   >
-                    {isWinner && (
-                      <div className="absolute -top-3 left-4 px-2.5 py-0.5 bg-amber-500 text-slate-950 font-black text-[10px] uppercase tracking-wider rounded-full shadow flex items-center space-x-1">
-                        <Trophy className="w-3 h-3" />
-                        <span>#1 Consensus Leader</span>
-                      </div>
-                    )}
+                    <div>
+                      {isWinner && (
+                        <div className="mb-3 inline-flex items-center space-x-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-500/40 text-amber-300 font-bold text-[10px] uppercase tracking-wider rounded-lg">
+                          <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span>#1 Consensus Leader</span>
+                        </div>
+                      )}
 
-                    <div className="space-y-3">
-                      <div className="flex items-start space-x-3">
-                        <MoviePoster
-                          src={c.movie.poster_url}
-                          alt={c.movie.title}
-                          title={c.movie.title}
-                          year={c.movie.release_year}
-                          language={c.movie.language}
-                          className="w-16 h-24 shrink-0 rounded-xl border border-slate-800"
-                        />
-                        <div className="min-w-0">
-                          <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase bg-slate-950 text-indigo-400 border border-slate-800 rounded">
-                            {c.movie.language} • {c.movie.release_year}
-                          </span>
-                          <h4 className="text-sm font-bold text-white truncate mt-1">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-20 sm:w-24 shrink-0 aspect-[2/3] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-sm">
+                          <MoviePoster
+                            src={c.movie.poster_url}
+                            alt={c.movie.title}
+                            title={c.movie.title}
+                            year={c.movie.release_year}
+                            language={c.movie.language}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          {/* Language, Year & Runtime Meta */}
+                          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                            <span className="px-1.5 py-0.5 font-bold uppercase bg-slate-950 text-indigo-400 border border-slate-800 rounded">
+                              {c.movie.language}
+                            </span>
+                            <span className="text-slate-400 font-medium">
+                              {c.movie.release_year}
+                            </span>
+                            {c.movie.runtime_minutes && (
+                              <>
+                                <span className="text-slate-600">•</span>
+                                <span className="text-slate-400">{c.movie.runtime_minutes}m</span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Movie Title */}
+                          <h4 
+                            className="text-sm font-bold text-white line-clamp-1 leading-snug hover:text-indigo-300 transition" 
+                            title={c.movie.title}
+                          >
                             {c.movie.title}
                           </h4>
-                          <div className="text-[11px] text-slate-400">
-                            {c.movie.runtime_minutes}m • {c.movie.genres?.join(', ')}
+
+                          {/* Genres Tags */}
+                          <div className="flex flex-wrap gap-1 text-[10px]">
+                            {c.movie.genres?.slice(0, 3).map(g => (
+                              <span 
+                                key={g} 
+                                className="px-1.5 py-0.5 bg-slate-800/80 rounded border border-slate-700/60 text-slate-300"
+                              >
+                                {g}
+                              </span>
+                            ))}
                           </div>
-                          <div className="text-xs font-black text-amber-400 mt-1">
-                            {c.movie.bayesian_score.toFixed(1)}★ Bayesian
+
+                          {/* Rating display */}
+                          <div className="flex items-center space-x-1.5 pt-0.5 text-xs">
+                            <span className="font-extrabold text-amber-400">
+                              ★ {c.movie.bayesian_score?.toFixed(1) || c.movie.rating_mean?.toFixed(1)}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-normal">
+                              ({c.movie.rating_count} reviews)
+                            </span>
                           </div>
                         </div>
                       </div>
 
                       {/* Group Fair Match Stats */}
-                      <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800/80 space-y-1 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">Group Composite Score:</span>
-                          <span className="font-black text-indigo-400">{c.composite_score}</span>
+                      <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 space-y-1.5 text-xs mt-3.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 font-medium">Group Composite Score:</span>
+                          <span className="text-sm font-black text-indigo-400 font-mono">{c.composite_score}</span>
                         </div>
-                        <div className="flex justify-between text-[11px] text-slate-500">
-                          <span>Average Match: {c.average_match}%</span>
-                          <span>Lowest Match: {c.lowest_individual_match}%</span>
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-900 pt-1">
+                          <span>Average: <strong className="text-slate-200">{c.average_match}%</strong></span>
+                          <span>Lowest: <strong className="text-slate-200">{c.lowest_individual_match}%</strong></span>
                         </div>
-                        <div className="text-[10px] text-slate-400 italic pt-1 border-t border-slate-800/60">
-                          {c.explanation}
-                        </div>
+                        {c.explanation && (
+                          <p className="text-[10px] text-slate-400 italic pt-1 border-t border-slate-900 line-clamp-2 leading-relaxed">
+                            {c.explanation}
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     {/* Voting controls & Decision Report link */}
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                      <div className="flex items-center space-x-1.5">
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-3">
+                      <div className="flex items-center space-x-2">
                         <button
                           type="button"
                           disabled={voteSubmitting}
                           onClick={() => handleVote(c.movie.id, 1)}
-                          className="flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-800/60 rounded-lg transition"
+                          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-800/70 rounded-xl transition disabled:opacity-50 active:scale-95"
                           title="Vote Yes (+1)"
                         >
                           <ThumbsUp className="w-3.5 h-3.5" />
@@ -476,7 +516,7 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
                           type="button"
                           disabled={voteSubmitting}
                           onClick={() => handleVote(c.movie.id, -1)}
-                          className="flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold text-rose-300 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/60 rounded-lg transition"
+                          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/70 rounded-xl transition disabled:opacity-50 active:scale-95"
                           title="Veto / Dislike (-1)"
                         >
                           <ThumbsDown className="w-3.5 h-3.5" />
@@ -487,7 +527,7 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
                       <button
                         type="button"
                         onClick={() => onOpenDecisionReport(c.movie.id)}
-                        className="text-xs text-slate-400 hover:text-white flex items-center space-x-1"
+                        className="text-xs font-medium text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition flex items-center space-x-1 shrink-0"
                       >
                         <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
                         <span>Evidence</span>

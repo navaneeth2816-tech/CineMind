@@ -196,7 +196,7 @@ MOVIES_DATA = [
         'language': 'Kannada',
         'runtime_minutes': 148,
         'overview': 'When greed paves the way for betrayal and rebellion, a young tribal champion invokes the ancient spirit of Bhoota Kola to protect his sacred forest.',
-        'poster_url': 'https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg',
+        'poster_url': 'https://image.tmdb.org/t/p/w500/jIsKmkxMzdCZ0Ux1GVSnu8m6Na6.jpg',
         'genres': ['Action', 'Drama', 'Fantasy', 'Thriller'],
         'ratings_dist': (4.8, 80),
         'reviews': [
