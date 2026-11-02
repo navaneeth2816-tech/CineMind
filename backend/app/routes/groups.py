@@ -140,16 +140,23 @@ def vote_candidate(code):
     if not movie:
         return jsonify({'error': 'Movie not found in catalogue.'}), 404
 
-    # Upsert vote (prevents duplicate votes by same member on same movie)
+    # Check for existing vote by this member on this movie
     vote = GroupVote.query.filter_by(
         group_id=session.id,
         member_id=member_id,
         movie_id=movie_id
     ).first()
 
+    status_message = "Vote recorded."
     if vote:
-        vote.vote_score = vote_val
-        vote.submitted_at = datetime.utcnow()
+        if vote.vote_score == vote_val:
+            # Clicking the same vote again does not duplicate or increase counts
+            status_message = "Vote already recorded."
+        else:
+            # Switching vote: decrease previous vote count and increase new vote count
+            vote.vote_score = vote_val
+            vote.submitted_at = datetime.utcnow()
+            status_message = "Vote updated."
     else:
         vote = GroupVote(
             group_id=session.id,
@@ -158,9 +165,24 @@ def vote_candidate(code):
             vote_score=vote_val
         )
         db.session.add(vote)
+        status_message = "Vote recorded."
 
     db.session.commit()
-    return jsonify({'message': 'Vote recorded.'}), 200
+
+    # Get updated live counts for this movie in the room
+    all_votes = GroupVote.query.filter_by(group_id=session.id, movie_id=movie_id).all()
+    upvotes = sum(1 for v in all_votes if v.vote_score == 1)
+    vetoes = sum(1 for v in all_votes if v.vote_score == -1)
+
+    return jsonify({
+        'message': status_message,
+        'movie_id': movie_id,
+        'user_vote': vote_val,
+        'upvotes_count': upvotes,
+        'vetoes_count': vetoes,
+        'votes_count': len(all_votes),
+        'votes_score': upvotes - vetoes
+    }), 200
 
 @groups_bp.route('/<code>/recommendations', methods=['GET'])
 def get_group_recommendations(code):
@@ -171,7 +193,8 @@ def get_group_recommendations(code):
     if not session:
         return jsonify({'error': 'Group session not found.'}), 404
 
-    ranked = rank_group_movies(session.id, limit=6)
+    member_id = request.args.get('member_id', type=int)
+    ranked = rank_group_movies(session.id, limit=6, current_member_id=member_id)
     return jsonify({
         'code': session.code,
         'objective': session.objective,

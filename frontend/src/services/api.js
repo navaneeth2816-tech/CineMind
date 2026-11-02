@@ -119,7 +119,10 @@ export const api = {
   getGroup: (code) => request(`/groups/${code}`),
   joinGroup: (code, payload) => request(`/groups/${code}/join`, { method: 'POST', body: JSON.stringify(payload) }),
   voteGroup: (code, payload) => request(`/groups/${code}/vote`, { method: 'POST', body: JSON.stringify(payload) }),
-  getGroupRecommendations: (code) => request(`/groups/${code}/recommendations`),
+  getGroupRecommendations: (code, memberId = null) => {
+    const q = memberId ? `?member_id=${encodeURIComponent(memberId)}` : '';
+    return request(`/groups/${code}/recommendations${q}`);
+  },
 
   // Analytics
   getRatingAnalytics: () => request('/analytics/ratings'),

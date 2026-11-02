@@ -184,6 +184,11 @@ class GroupVote(db.Model):
     vote_score = db.Column(db.Integer, nullable=False) # 1 (like) or -1 (veto/dislike)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Constraint to prevent duplicate voting by the same participant on the same movie in a session
+    __table_args__ = (
+        db.UniqueConstraint('group_id', 'member_id', 'movie_id', name='uq_group_member_movie_vote'),
+    )
+
 class MovieReview(db.Model):
     __tablename__ = 'movie_reviews'
     

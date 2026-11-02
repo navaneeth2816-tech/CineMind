@@ -50,11 +50,12 @@ def join_group_session(code: str, participant_name: str, user_id: int = None, pr
     db.session.commit()
     return member, None
 
-def rank_group_movies(group_id: int, limit: int = 6):
+def rank_group_movies(group_id: int, limit: int = 6, current_member_id: int = None):
     """
     Ranks movie candidates for the group using the configured objective (PRD Section 6.13):
     - 'best_average': maximizes average member satisfaction
     - 'avoid_mismatch': maximizes satisfaction while heavily penalizing low minimum match
+    Calculates accurate upvote and veto counts per movie and tracks current member's vote.
     """
     session = GroupSession.query.get(group_id)
     if not session:
@@ -116,7 +117,15 @@ def rank_group_movies(group_id: int, limit: int = 6):
 
         # Check votes submitted for this movie
         votes = GroupVote.query.filter_by(group_id=group_id, movie_id=m.id).all()
-        vote_total = sum(v.vote_score for v in votes)
+        upvotes_count = sum(1 for v in votes if v.vote_score == 1)
+        vetoes_count = sum(1 for v in votes if v.vote_score == -1)
+        vote_total = upvotes_count - vetoes_count
+
+        user_vote = None
+        if current_member_id:
+            user_vote_obj = next((v for v in votes if v.member_id == current_member_id), None)
+            if user_vote_obj:
+                user_vote = user_vote_obj.vote_score
 
         ranked_results.append({
             'movie': m.to_dict(),
@@ -125,6 +134,9 @@ def rank_group_movies(group_id: int, limit: int = 6):
             'lowest_individual_match': round(min_score, 1),
             'votes_count': len(votes),
             'votes_score': vote_total,
+            'upvotes_count': upvotes_count,
+            'vetoes_count': vetoes_count,
+            'user_vote': user_vote,
             'explanation': (
                 f"Balances {len(members)} participants. "
                 f"Average match: {avg_score:.0f}%, Lowest: {min_score:.0f}%. "

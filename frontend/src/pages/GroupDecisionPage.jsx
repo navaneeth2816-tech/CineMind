@@ -33,13 +33,13 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
   const GENRES_LIST = ['Action', 'Comedy', 'Drama', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller'];
   const LANGUAGES_LIST = ['Telugu', 'Tamil', 'Malayalam', 'Kannada', 'Hindi', 'English'];
 
-  // Refresh group details and ranked candidates
-  const fetchGroupState = async (code) => {
+  // Refresh group details and ranked candidates (including current member's votes)
+  const fetchGroupState = async (code, memberId = myMemberId) => {
     if (!code) return;
     try {
       const gRes = await api.getGroup(code);
       setGroupData(gRes);
-      const cRes = await api.getGroupRecommendations(code);
+      const cRes = await api.getGroupRecommendations(code, memberId);
       setCandidates(cRes.candidates || []);
     } catch (err) {
       console.error('Failed to poll group:', err);
@@ -48,10 +48,10 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
 
   useEffect(() => {
     if (!activeCode) return;
-    fetchGroupState(activeCode);
-    const interval = setInterval(() => fetchGroupState(activeCode), 8000);
+    fetchGroupState(activeCode, myMemberId);
+    const interval = setInterval(() => fetchGroupState(activeCode, myMemberId), 6000);
     return () => clearInterval(interval);
-  }, [activeCode]);
+  }, [activeCode, myMemberId]);
 
   const handleCreateRoom = async (e) => {
     e.preventDefault();
@@ -71,6 +71,7 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
       setActiveCode(res.code);
       setMyMemberId(res.member_id);
       setIsCreating(false);
+      fetchGroupState(res.code, res.member_id);
     } catch (err) {
       alert(err.message || 'Failed to create room.');
     } finally {
@@ -83,12 +84,14 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
     if (!joinCodeInput.trim()) return;
     setLoading(true);
     try {
-      const res = await api.joinGroup(joinCodeInput.trim().toUpperCase(), {
+      const formattedCode = joinCodeInput.trim().toUpperCase();
+      const res = await api.joinGroup(formattedCode, {
         name: joinNameInput || 'Friend',
         preferences: { genres: joinGenres }
       });
-      setActiveCode(joinCodeInput.trim().toUpperCase());
+      setActiveCode(formattedCode);
       setMyMemberId(res.member_id);
+      fetchGroupState(formattedCode, res.member_id);
     } catch (err) {
       alert(err.message || 'Could not join room.');
     } finally {
@@ -108,10 +111,10 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
         movie_id: movieId,
         vote: voteVal
       });
-      // Immediate refresh
-      await fetchGroupState(activeCode);
+      // Immediate refresh with accurate updated Upvote and Veto counts
+      await fetchGroupState(activeCode, myMemberId);
     } catch (err) {
-      console.error(err);
+      console.error('Vote error:', err);
     } finally {
       setVoteSubmitting(false);
     }
@@ -490,6 +493,9 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
                         <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-900 pt-1">
                           <span>Average: <strong className="text-slate-200">{c.average_match}%</strong></span>
                           <span>Lowest: <strong className="text-slate-200">{c.lowest_individual_match}%</strong></span>
+                          <span className="font-medium">
+                            <span className="text-emerald-400">+{c.upvotes_count || 0}</span> / <span className="text-rose-400">-{c.vetoes_count || 0}</span>
+                          </span>
                         </div>
                         {c.explanation && (
                           <p className="text-[10px] text-slate-400 italic pt-1 border-t border-slate-900 line-clamp-2 leading-relaxed">
@@ -502,25 +508,46 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
                     {/* Voting controls & Decision Report link */}
                     <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 mt-3">
                       <div className="flex items-center space-x-2">
+                        {/* Upvote Button with Live Count and Active Highlight */}
                         <button
                           type="button"
                           disabled={voteSubmitting}
                           onClick={() => handleVote(c.movie.id, 1)}
-                          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-800/70 rounded-xl transition disabled:opacity-50 active:scale-95"
-                          title="Vote Yes (+1)"
+                          className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition active:scale-95 disabled:opacity-50 ${
+                            c.user_vote === 1
+                              ? 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-950/60 ring-1 ring-emerald-300'
+                              : 'text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border-emerald-800/70'
+                          }`}
+                          title={c.user_vote === 1 ? "You upvoted this movie" : "Upvote (+1)"}
                         >
                           <ThumbsUp className="w-3.5 h-3.5" />
                           <span>Upvote</span>
+                          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                            c.user_vote === 1 ? 'bg-emerald-800 text-white' : 'bg-emerald-900/80 text-emerald-200'
+                          }`}>
+                            {c.upvotes_count || 0}
+                          </span>
                         </button>
+
+                        {/* Veto Button with Live Count and Active Highlight */}
                         <button
                           type="button"
                           disabled={voteSubmitting}
                           onClick={() => handleVote(c.movie.id, -1)}
-                          className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 bg-rose-950/70 hover:bg-rose-900 border border-rose-800/70 rounded-xl transition disabled:opacity-50 active:scale-95"
-                          title="Veto / Dislike (-1)"
+                          className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition active:scale-95 disabled:opacity-50 ${
+                            c.user_vote === -1
+                              ? 'bg-rose-600 text-white border-rose-400 shadow-md shadow-rose-950/60 ring-1 ring-rose-300'
+                              : 'text-rose-300 bg-rose-950/70 hover:bg-rose-900 border-rose-800/70'
+                          }`}
+                          title={c.user_vote === -1 ? "You vetoed this movie" : "Veto (-1)"}
                         >
                           <ThumbsDown className="w-3.5 h-3.5" />
                           <span>Veto</span>
+                          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                            c.user_vote === -1 ? 'bg-rose-800 text-white' : 'bg-rose-900/80 text-rose-200'
+                          }`}>
+                            {c.vetoes_count || 0}
+                          </span>
                         </button>
                       </div>
 
