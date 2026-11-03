@@ -1,65 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
 import { 
   Film, Sparkles, BrainCircuit, Users, BarChart3, 
-  Search, Bookmark, ShieldAlert, LogOut, User, ChevronDown, Scale
+  Bookmark, ShieldAlert, LogOut, User, ChevronDown, Scale
 } from 'lucide-react';
-import MoviePoster from './MoviePoster';
 
 export default function Navbar({ onSelectMovie }) {
   const { user, isAuthenticated, isAdmin, watchlistIds, logout, setIsAuthModalOpen, setIsOnboardingModalOpen } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const searchRef = useRef(null);
-
-  // Autocomplete debounced search
-  useEffect(() => {
-    if (!searchQuery.trim() || searchQuery.length < 2) {
-      setSuggestions([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      try {
-        const { results } = await api.searchAutocomplete(searchQuery);
-        setSuggestions(results || []);
-        setShowDropdown(true);
-      } catch (e) {
-        setSuggestions([]);
-      }
-    }, 250);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  // Click outside to close search dropdown
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelectSuggestion = (movie) => {
-    setShowDropdown(false);
-    setSearchQuery('');
-    if (onSelectMovie) {
-      onSelectMovie(movie.id);
-    } else {
-      navigate(`/?selected=${movie.id}`);
-    }
-  };
 
   const navLinks = [
     { to: '/', label: 'Discover', icon: Film },
@@ -90,60 +40,8 @@ export default function Navbar({ onSelectMovie }) {
           </div>
         </Link>
 
-        {/* Live Autocomplete Search Bar */}
-        <div ref={searchRef} className="relative flex-1 max-w-md hidden md:block">
-          <div className="relative">
-            <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-              placeholder="Search movies, regional titles, directors..."
-              className="w-full pl-10 pr-4 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl focus:border-indigo-500 focus:outline-none text-white placeholder-slate-500 transition shadow-inner"
-            />
-          </div>
-
-          {showDropdown && suggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-in">
-              <div className="p-2 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-800">
-                Catalogue Matches
-              </div>
-              <div className="max-h-80 overflow-y-auto divide-y divide-slate-800/60">
-                {suggestions.map((m) => (
-                  <div
-                    key={m.id}
-                    onClick={() => handleSelectSuggestion(m)}
-                    className="p-2.5 hover:bg-slate-800/80 cursor-pointer flex items-center space-x-3 transition group"
-                  >
-                    <MoviePoster
-                      src={m.poster_url}
-                      alt={m.title}
-                      title={m.title}
-                      year={m.release_year}
-                      language={m.language}
-                      className="w-8 h-12 shrink-0 rounded border border-slate-800"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-xs text-white group-hover:text-indigo-400 transition truncate">
-                        {m.title}
-                      </div>
-                      <div className="text-[11px] text-slate-400">
-                        {m.language} • {m.release_year} • {m.genres?.slice(0, 2).join(', ')}
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-amber-400 shrink-0">
-                      {m.bayesian_score.toFixed(1)}★
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation links */}
-        <nav className="hidden lg:flex items-center space-x-1">
+        {/* Navigation links - evenly distributed in the center */}
+        <nav className="hidden md:flex items-center space-x-1 sm:space-x-1.5 lg:space-x-2">
           {navLinks.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;
@@ -151,7 +49,7 @@ export default function Navbar({ onSelectMovie }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-xl transition ${
+                className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition ${
                   active
                     ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
                     : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -179,7 +77,7 @@ export default function Navbar({ onSelectMovie }) {
         </nav>
 
         {/* User Account / Auth Actions */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 shrink-0">
           {/* Watchlist Counter */}
           <Link
             to="/taste-dna#watchlist"
@@ -272,7 +170,7 @@ export default function Navbar({ onSelectMovie }) {
       </div>
 
       {/* Mobile nav pills */}
-      <div className="lg:hidden flex items-center space-x-2 px-4 py-2 border-t border-slate-900 overflow-x-auto no-scrollbar">
+      <div className="md:hidden flex items-center space-x-2 px-4 py-2 border-t border-slate-900 overflow-x-auto no-scrollbar">
         {navLinks.map((item) => {
           const Icon = item.icon;
           const active = location.pathname === item.to;
