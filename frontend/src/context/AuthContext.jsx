@@ -9,7 +9,13 @@ export function AuthProvider({ children }) {
   const [watchlistIds, setWatchlistIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login'); // 'login' | 'register'
   const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+
+  const openAuthModal = (mode = 'login') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
 
   // Load user profile and watchlist on startup or token change
   useEffect(() => {
@@ -114,6 +120,9 @@ export function AuthProvider({ children }) {
     refreshUser,
     isAuthModalOpen,
     setIsAuthModalOpen,
+    authModalMode,
+    setAuthModalMode,
+    openAuthModal,
     isOnboardingModalOpen,
     setIsOnboardingModalOpen
   };
