@@ -3,30 +3,136 @@ import { api } from '../services/api';
 import { 
   BarChart3, Globe, ShieldCheck, Film, 
   Clock, Star, Info, TrendingUp, Calculator,
-  Sliders, Layers, PieChart, CheckCircle2
+  Sliders, Layers, PieChart, CheckCircle2,
+  AlertCircle, RotateCw, RefreshCw
 } from 'lucide-react';
+
+function ChartCard({
+  title,
+  icon: Icon,
+  badge,
+  badgeColor = 'bg-indigo-950 text-indigo-300 border-indigo-800/60',
+  chartUrl,
+  chartEndpoint,
+  minRatings,
+  description,
+  loading,
+  onOpenZoom
+}) {
+  const [imageError, setImageError] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Reset error when chartUrl or minRatings changes
+  useEffect(() => {
+    setImageError(false);
+  }, [chartUrl, minRatings]);
+
+  const directUrl = api.getChartImageUrl(chartEndpoint, minRatings);
+  const effectiveSrc = (!imageError && chartUrl) ? chartUrl : `${directUrl}&k=${refreshKey}`;
+
+  const handleRetry = (e) => {
+    e.stopPropagation();
+    setImageError(false);
+    setRefreshKey(prev => prev + 1);
+  };
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-slate-700 transition">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
+        <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
+          {Icon && <Icon className="w-3.5 h-3.5 text-indigo-400" />}
+          <span>{title}</span>
+        </span>
+        <span className={`text-[10px] px-2 py-0.5 rounded-md border font-semibold ${badgeColor}`}>
+          {badge}
+        </span>
+      </div>
+
+      <div 
+        className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/80 cursor-pointer group relative min-h-[220px] flex items-center justify-center"
+        onClick={() => effectiveSrc && !imageError && onOpenZoom(effectiveSrc)}
+      >
+        {loading ? (
+          <div className="p-8 flex flex-col items-center justify-center space-y-2 text-slate-500">
+            <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-[11px] text-slate-400">Rendering Matplotlib chart...</span>
+          </div>
+        ) : imageError ? (
+          <div className="p-8 flex flex-col items-center justify-center space-y-3 text-center">
+            <AlertCircle className="w-7 h-7 text-rose-400" />
+            <div className="text-xs text-rose-300 font-semibold">Chart generation temporarily unavailable</div>
+            <p className="text-[11px] text-slate-500 max-w-xs">Failed to render Matplotlib output from backend server.</p>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white rounded-xl border border-slate-700 transition flex items-center space-x-1.5"
+            >
+              <RotateCw className="w-3 h-3 text-indigo-400" />
+              <span>Retry Render</span>
+            </button>
+          </div>
+        ) : (
+          <img
+            src={effectiveSrc}
+            alt={title}
+            onError={() => setImageError(true)}
+            className="w-full h-auto object-contain transition group-hover:scale-[1.01]"
+          />
+        )}
+      </div>
+
+      <p className="text-[11px] text-slate-400 mt-3 italic leading-relaxed">
+        {description}
+      </p>
+    </div>
+  );
+}
 
 export default function RegionalAnalyticsPage() {
   const [regionalData, setRegionalData] = useState([]);
   const [globalStats, setGlobalStats] = useState(null);
   const [disclaimer, setDisclaimer] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [minRatings, setMinRatings] = useState(5);
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'charts', 'stats', 'top-rated'
   const [selectedChart, setSelectedChart] = useState(null);
 
   const fetchAnalytics = (threshold) => {
     setLoading(true);
-    Promise.all([
+    setError(null);
+
+    Promise.allSettled([
       api.getRegionalAnalytics(),
       api.getRatingAnalytics(threshold)
     ])
-      .then(([regData, globData]) => {
-        setRegionalData(regData.regional_comparison || []);
-        setDisclaimer(regData.dataset_disclaimer || '');
-        setGlobalStats(globData);
+      .then(([regResult, globResult]) => {
+        let successCount = 0;
+
+        if (regResult.status === 'fulfilled' && regResult.value) {
+          setRegionalData(regResult.value.regional_comparison || []);
+          setDisclaimer(regResult.value.dataset_disclaimer || '');
+          successCount++;
+        }
+
+        if (globResult.status === 'fulfilled' && globResult.value) {
+          setGlobalStats(globResult.value);
+          // If regional endpoint was unpopulated, use regional_analysis from ratings endpoint
+          if (regResult.status !== 'fulfilled' && globResult.value.regional_analysis) {
+            setRegionalData(globResult.value.regional_analysis);
+          }
+          successCount++;
+        }
+
+        if (successCount === 0) {
+          const errMsg = globResult.reason?.message || regResult.reason?.message || 'Failed to connect to analytics service.';
+          setError(errMsg);
+        }
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error('Analytics Fetch Error:', err);
+        setError(err.message || 'Error communicating with analytics backend.');
+      })
       .finally(() => setLoading(false));
   };
 
@@ -62,32 +168,66 @@ export default function RegionalAnalyticsPage() {
           </div>
         </div>
 
-        {/* View Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-950/80 border border-slate-800 rounded-2xl self-start md:self-auto">
-          {[
-            { id: 'all', label: 'All-in-One Dashboard', icon: Layers },
-            { id: 'charts', label: 'Matplotlib Charts', icon: PieChart },
-            { id: 'stats', label: 'NumPy Statistics', icon: Calculator },
-            { id: 'top-rated', label: 'Top-Rated Films', icon: TrendingUp }
-          ].map(tab => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                  activeTab === tab.id
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        <div className="flex items-center space-x-3 self-start md:self-auto">
+          {/* Refresh Button */}
+          <button
+            type="button"
+            onClick={() => fetchAnalytics(minRatings)}
+            disabled={loading}
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition disabled:opacity-50"
+            title="Fetch latest database records and re-render charts"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-indigo-400' : ''}`} />
+            <span>Refresh Live Data</span>
+          </button>
+
+          {/* View Filter Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-950/80 border border-slate-800 rounded-2xl">
+            {[
+              { id: 'all', label: 'All-in-One Dashboard', icon: Layers },
+              { id: 'charts', label: 'Matplotlib Charts', icon: PieChart },
+              { id: 'stats', label: 'NumPy Statistics', icon: Calculator },
+              { id: 'top-rated', label: 'Top-Rated Films', icon: TrendingUp }
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                    activeTab === tab.id
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {/* Error Alert Banner with Retry */}
+      {error && (
+        <div className="p-4 bg-rose-950/40 border border-rose-800/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-rose-300">
+          <div className="flex items-center space-x-2.5">
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            <div>
+              <span className="font-bold text-white block">Analytics Service Notice:</span>
+              <span>{error}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchAnalytics(minRatings)}
+            className="px-3.5 py-1.5 bg-rose-900 hover:bg-rose-800 text-white font-semibold rounded-xl border border-rose-700 transition shrink-0 self-start sm:self-auto"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
 
       {/* Global Overview KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -96,13 +236,13 @@ export default function RegionalAnalyticsPage() {
           <div className="text-2xl font-black text-white mt-1">{overview?.total_movies || 0} Titles</div>
           <div className="text-[10px] text-indigo-400 mt-0.5 flex items-center space-x-1">
             <CheckCircle2 className="w-3 h-3" />
-            <span>Verified in MySQL</span>
+            <span>Connected to MySQL Database</span>
           </div>
         </div>
 
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-lg">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total Rating Sample</div>
-          <div className="text-2xl font-black text-white mt-1">{overview?.total_ratings || 0}</div>
+          <div className="text-2xl font-black text-white mt-1">{(overview?.total_ratings || 0).toLocaleString()}</div>
           <div className="text-[10px] text-slate-400 mt-0.5">Pandas DataFrame Aggregated</div>
         </div>
 
@@ -119,15 +259,15 @@ export default function RegionalAnalyticsPage() {
         </div>
       </div>
 
-      {loading && (
+      {loading && !globalStats && (
         <div className="p-12 flex flex-col items-center justify-center space-y-3 bg-slate-900/50 rounded-2xl border border-slate-800">
           <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-slate-400">Computing analytics and rendering Matplotlib visualizations...</p>
         </div>
       )}
 
-      {/* SECTION 1: Matplotlib Data Visualizations (Requirement 4) */}
-      {(activeTab === 'all' || activeTab === 'charts') && !loading && (
+      {/* SECTION 1: Matplotlib Data Visualizations (Requirement 4 & 5) */}
+      {(activeTab === 'all' || activeTab === 'charts') && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-800 pb-3">
             <div className="flex items-center space-x-2">
@@ -140,136 +280,72 @@ export default function RegionalAnalyticsPage() {
               </span>
             </div>
             <div className="text-[11px] text-slate-400 italic">
-              Click any chart to view high-resolution render
+              Click any chart to inspect high-resolution render
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chart 1: Genre Analysis */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-slate-700 transition">
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
-                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
-                  <Film className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>1. Genre Rating Analysis</span>
-                </span>
-                <span className="text-[10px] px-2 py-0.5 bg-indigo-950 text-indigo-300 rounded-md border border-indigo-800/60 font-semibold">
-                  Pandas GroupBy & Matplotlib
-                </span>
-              </div>
-              <div 
-                className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/80 cursor-pointer group relative"
-                onClick={() => setSelectedChart(charts.genre_analysis)}
-              >
-                {charts.genre_analysis ? (
-                  <img
-                    src={charts.genre_analysis}
-                    alt="Genre Rating Analysis Chart"
-                    className="w-full h-auto object-contain transition group-hover:scale-[1.01]"
-                  />
-                ) : (
-                  <div className="p-8 text-center text-xs text-slate-500">Generating chart...</div>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-3 italic leading-relaxed">
-                Aggregates average audience rating by genre across all catalogue entries using Pandas relational grouping.
-              </p>
-            </div>
+            <ChartCard
+              title="1. Genre Rating Analysis"
+              icon={Film}
+              badge="Pandas GroupBy & Matplotlib"
+              badgeColor="bg-indigo-950 text-indigo-300 border-indigo-800/60"
+              chartUrl={charts?.genre_analysis}
+              chartEndpoint="genre-analysis"
+              minRatings={minRatings}
+              loading={loading && !charts?.genre_analysis}
+              onOpenZoom={setSelectedChart}
+              description="Aggregates average audience rating by genre across all catalogue entries using Pandas relational grouping."
+            />
 
             {/* Chart 2: Rating Distribution */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-slate-700 transition">
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
-                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
-                  <Star className="w-3.5 h-3.5 text-amber-400" />
-                  <span>2. Rating Distribution (1★ to 5★)</span>
-                </span>
-                <span className="text-[10px] px-2 py-0.5 bg-amber-950 text-amber-300 rounded-md border border-amber-800/60 font-semibold">
-                  NumPy Bincount & Matplotlib
-                </span>
-              </div>
-              <div 
-                className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/80 cursor-pointer group relative"
-                onClick={() => setSelectedChart(charts.rating_distribution)}
-              >
-                {charts.rating_distribution ? (
-                  <img
-                    src={charts.rating_distribution}
-                    alt="Rating Distribution Chart"
-                    className="w-full h-auto object-contain transition group-hover:scale-[1.01]"
-                  />
-                ) : (
-                  <div className="p-8 text-center text-xs text-slate-500">Generating chart...</div>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-3 italic leading-relaxed">
-                Illustrates exact rating frequencies computed via NumPy bin counting, showing volume concentration in 4★ and 5★ tiers.
-              </p>
-            </div>
+            <ChartCard
+              title="2. Rating Distribution (1★ to 5★)"
+              icon={Star}
+              badge="NumPy Bincount & Matplotlib"
+              badgeColor="bg-amber-950 text-amber-300 border-amber-800/60"
+              chartUrl={charts?.rating_distribution}
+              chartEndpoint="rating-distribution"
+              minRatings={minRatings}
+              loading={loading && !charts?.rating_distribution}
+              onOpenZoom={setSelectedChart}
+              description="Illustrates exact rating frequencies computed via NumPy bin counting, showing volume concentration in 4★ and 5★ tiers."
+            />
 
             {/* Chart 3: Top-Rated Movies with Threshold */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-slate-700 transition">
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
-                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>3. Verified Top-Rated Movies</span>
-                </span>
-                <span className="text-[10px] px-2 py-0.5 bg-emerald-950 text-emerald-300 rounded-md border border-emerald-800/60 font-semibold">
-                  Min {minRatings}+ Ratings Threshold
-                </span>
-              </div>
-              <div 
-                className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/80 cursor-pointer group relative"
-                onClick={() => setSelectedChart(charts.top_rated_movies)}
-              >
-                {charts.top_rated_movies ? (
-                  <img
-                    src={charts.top_rated_movies}
-                    alt="Top Rated Movies Chart"
-                    className="w-full h-auto object-contain transition group-hover:scale-[1.01]"
-                  />
-                ) : (
-                  <div className="p-8 text-center text-xs text-slate-500">Generating chart...</div>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-3 italic leading-relaxed">
-                Filters out titles with fewer than {minRatings} reviews to prevent low-sample skew, ranking top films by sample mean.
-              </p>
-            </div>
+            <ChartCard
+              title="3. Verified Top-Rated Movies"
+              icon={TrendingUp}
+              badge={`Min ${minRatings}+ Ratings Threshold`}
+              badgeColor="bg-emerald-950 text-emerald-300 border-emerald-800/60"
+              chartUrl={charts?.top_rated_movies}
+              chartEndpoint="top-rated"
+              minRatings={minRatings}
+              loading={loading && !charts?.top_rated_movies}
+              onOpenZoom={setSelectedChart}
+              description={`Filters out titles with fewer than ${minRatings} reviews to prevent low-sample skew, ranking top films by sample mean.`}
+            />
 
             {/* Chart 4: Regional Rating Comparison */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between hover:border-slate-700 transition">
-              <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
-                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-1.5">
-                  <Globe className="w-3.5 h-3.5 text-violet-400" />
-                  <span>4. Regional Cinema Comparison</span>
-                </span>
-                <span className="text-[10px] px-2 py-0.5 bg-violet-950 text-violet-300 rounded-md border border-violet-800/60 font-semibold">
-                  Dual-Axis Rating vs Volume
-                </span>
-              </div>
-              <div 
-                className="bg-slate-950 rounded-2xl overflow-hidden border border-slate-800/80 cursor-pointer group relative"
-                onClick={() => setSelectedChart(charts.regional_comparison)}
-              >
-                {charts.regional_comparison ? (
-                  <img
-                    src={charts.regional_comparison}
-                    alt="Regional Comparison Chart"
-                    className="w-full h-auto object-contain transition group-hover:scale-[1.01]"
-                  />
-                ) : (
-                  <div className="p-8 text-center text-xs text-slate-500">Generating chart...</div>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-3 italic leading-relaxed">
-                Compares Bayesian average rating performance alongside total review sample volume across all regional film industries.
-              </p>
-            </div>
+            <ChartCard
+              title="4. Regional Cinema Comparison"
+              icon={Globe}
+              badge="Dual-Axis Rating vs Volume"
+              badgeColor="bg-violet-950 text-violet-300 border-violet-800/60"
+              chartUrl={charts?.regional_comparison}
+              chartEndpoint="regional-comparison"
+              minRatings={minRatings}
+              loading={loading && !charts?.regional_comparison}
+              onOpenZoom={setSelectedChart}
+              description="Compares Bayesian average rating performance alongside total review sample volume across all regional film industries."
+            />
           </div>
         </div>
       )}
 
       {/* SECTION 2: NumPy Statistical Analysis (Requirement 3) */}
-      {(activeTab === 'all' || activeTab === 'stats') && !loading && (
+      {(activeTab === 'all' || activeTab === 'stats') && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-5">
           <div className="flex items-center space-x-2 border-b border-slate-800 pb-3">
             <Calculator className="w-5 h-5 text-indigo-400" />
@@ -356,7 +432,7 @@ export default function RegionalAnalyticsPage() {
       )}
 
       {/* SECTION 3: Top-Rated Movies & Minimum Rating Threshold Rule (Requirement 5) */}
-      {(activeTab === 'all' || activeTab === 'top-rated') && !loading && (
+      {(activeTab === 'all' || activeTab === 'top-rated') && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
             <div>
@@ -401,34 +477,40 @@ export default function RegionalAnalyticsPage() {
           </div>
 
           <div className="divide-y divide-slate-800/70 border border-slate-800/80 rounded-2xl bg-slate-950/60 overflow-hidden">
-            {topRatedMovies.slice(0, 10).map((m, idx) => (
-              <div key={m.movie_id} className="p-3.5 flex items-center justify-between hover:bg-slate-900/40 transition">
-                <div className="flex items-center space-x-3.5">
-                  <span className="w-6 text-center text-xs font-black text-slate-500">#{idx + 1}</span>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">{m.title}</h4>
-                    <span className="text-[11px] text-slate-400">
-                      {m.language} • {m.release_year} • {m.rating_count} verified reviews
+            {topRatedMovies.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-500">
+                No movies qualified under the minimum threshold of {minRatings} ratings.
+              </div>
+            ) : (
+              topRatedMovies.slice(0, 10).map((m, idx) => (
+                <div key={m.movie_id} className="p-3.5 flex items-center justify-between hover:bg-slate-900/40 transition">
+                  <div className="flex items-center space-x-3.5">
+                    <span className="w-6 text-center text-xs font-black text-slate-500">#{idx + 1}</span>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{m.title}</h4>
+                      <span className="text-[11px] text-slate-400">
+                        {m.language} • {m.release_year} • {m.rating_count} verified reviews
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center space-x-3">
+                    <div className="text-right">
+                      <span className="text-sm font-black text-amber-400">{m.rating_mean.toFixed(2)}★</span>
+                      <div className="text-[10px] text-indigo-400 font-semibold">{m.bayesian_score.toFixed(2)}★ Bayesian</div>
+                    </div>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/80 rounded-md">
+                      Qualified (≥{minRatings})
                     </span>
                   </div>
                 </div>
-                <div className="text-right flex items-center space-x-3">
-                  <div className="text-right">
-                    <span className="text-sm font-black text-amber-400">{m.rating_mean.toFixed(2)}★</span>
-                    <div className="text-[10px] text-indigo-400 font-semibold">{m.bayesian_score.toFixed(2)}★ Bayesian</div>
-                  </div>
-                  <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/80 rounded-md">
-                    Qualified (≥{minRatings})
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
 
       {/* SECTION 4: Pandas Genre Aggregation Table (Requirement 2) */}
-      {(activeTab === 'all' || activeTab === 'stats') && !loading && (
+      {(activeTab === 'all' || activeTab === 'stats') && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-4">
           <div className="flex items-center space-x-2 border-b border-slate-800 pb-3">
             <Film className="w-5 h-5 text-indigo-400" />
@@ -454,7 +536,7 @@ export default function RegionalAnalyticsPage() {
       )}
 
       {/* SECTION 5: Regional Cinema Breakdown Cards */}
-      {(activeTab === 'all' || activeTab === 'stats') && !loading && (
+      {(activeTab === 'all' || activeTab === 'stats') && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-5">
           <div className="flex items-center space-x-2 border-b border-slate-800 pb-3">
             <Globe className="w-5 h-5 text-indigo-400" />
@@ -532,6 +614,7 @@ export default function RegionalAnalyticsPage() {
             <div className="flex justify-between items-center mb-3 px-2">
               <span className="text-xs font-bold text-white">High-Resolution Chart (Matplotlib)</span>
               <button
+                type="button"
                 onClick={() => setSelectedChart(null)}
                 className="text-xs font-semibold px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition"
               >

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from flask import Blueprint, request, jsonify, Response
 from app.models import db, Movie, Rating, Genre
 from app.services.data_analysis_service import (
@@ -29,76 +30,92 @@ def get_rating_analytics():
     except (ValueError, TypeError):
         min_ratings = 5
 
-    report = generate_complete_analytics_report(min_ratings=min_ratings)
-    stats = report['statistics']
-    analysis = report['analysis']
-    charts = report['charts']
+    try:
+        report = generate_complete_analytics_report(min_ratings=min_ratings)
+        stats = report['statistics']
+        analysis = report['analysis']
+        charts = report['charts']
 
-    # Backwards compatibility and rich analytics payload
-    top_bayesian = Movie.query.order_by(Movie.bayesian_score.desc()).limit(5).all()
-    most_rated = Movie.query.order_by(Movie.rating_count.desc()).limit(5).all()
+        # Backwards compatibility and rich analytics payload
+        top_bayesian = Movie.query.order_by(Movie.bayesian_score.desc()).limit(5).all()
+        most_rated = Movie.query.order_by(Movie.rating_count.desc()).limit(5).all()
 
-    return jsonify({
-        # High-level overview
-        'overview': {
-            'total_movies': analysis['movies_evaluated'],
-            'total_ratings': stats['total_ratings'],
-            'average_rating': stats['mean'],
-            'median_rating': stats['median'],
-            'std_deviation': stats['std_dev'],
-            'variance': stats['variance'],
-            'min_rating': stats['min'],
-            'max_rating': stats['max'],
-            'percentile_25': stats['percentile_25'],
-            'percentile_75': stats['percentile_75'],
+        return jsonify({
+            # High-level overview
+            'overview': {
+                'total_movies': analysis['movies_evaluated'],
+                'total_ratings': stats['total_ratings'],
+                'average_rating': stats['mean'],
+                'median_rating': stats['median'],
+                'std_deviation': stats['std_dev'],
+                'variance': stats['variance'],
+                'min_rating': stats['min'],
+                'max_rating': stats['max'],
+                'percentile_25': stats['percentile_25'],
+                'percentile_75': stats['percentile_75'],
+                'min_ratings_threshold': min_ratings,
+                'qualified_top_rated_count': analysis['movies_qualified']
+            },
+            # NumPy Rating Statistics (Requirement 3)
+            'numpy_statistics': stats,
+            # Star distributions
+            'star_distribution': stats['star_distribution'],
+            'star_distribution_pct': stats['star_percentages'],
+            # Pandas Genre Analysis (Requirement 2)
+            'genre_analysis': analysis['genre_aggregations'],
+            # Pandas Regional Aggregations
+            'regional_analysis': analysis['regional_aggregations'],
+            # Pandas Verified Top-Rated Movies with Minimum Threshold Rule (Requirement 5)
+            'top_rated_movies': analysis['top_rated_movies'],
             'min_ratings_threshold': min_ratings,
-            'qualified_top_rated_count': analysis['movies_qualified']
-        },
-        # NumPy Rating Statistics (Requirement 3)
-        'numpy_statistics': stats,
-        # Star distributions
-        'star_distribution': stats['star_distribution'],
-        'star_distribution_pct': stats['star_percentages'],
-        # Pandas Genre Analysis (Requirement 2)
-        'genre_analysis': analysis['genre_aggregations'],
-        # Pandas Regional Aggregations
-        'regional_analysis': analysis['regional_aggregations'],
-        # Pandas Verified Top-Rated Movies with Minimum Threshold Rule (Requirement 5)
-        'top_rated_movies': analysis['top_rated_movies'],
-        'min_ratings_threshold': min_ratings,
-        'movies_evaluated': analysis['movies_evaluated'],
-        'movies_qualified': analysis['movies_qualified'],
-        # Legacy lists preserved
-        'top_bayesian_movies': [
-            {
-                'id': m.id,
-                'title': m.title,
-                'bayesian_score': m.bayesian_score,
-                'rating_mean': m.rating_mean,
-                'rating_count': m.rating_count,
-                'language': m.language
+            'movies_evaluated': analysis['movies_evaluated'],
+            'movies_qualified': analysis['movies_qualified'],
+            # Legacy lists preserved
+            'top_bayesian_movies': [
+                {
+                    'id': m.id,
+                    'title': m.title,
+                    'bayesian_score': m.bayesian_score,
+                    'rating_mean': m.rating_mean,
+                    'rating_count': m.rating_count,
+                    'language': m.language
+                }
+                for m in top_bayesian
+            ],
+            'most_rated_movies': [
+                {
+                    'id': m.id,
+                    'title': m.title,
+                    'rating_count': m.rating_count,
+                    'rating_mean': m.rating_mean,
+                    'bayesian_score': m.bayesian_score,
+                    'language': m.language
+                }
+                for m in most_rated
+            ],
+            # Matplotlib Charts (Requirement 4)
+            'charts': {
+                'genre_analysis': charts['genre_analysis'],
+                'rating_distribution': charts['rating_distribution'],
+                'top_rated_movies': charts['top_rated_movies'],
+                'regional_comparison': charts['regional_comparison']
             }
-            for m in top_bayesian
-        ],
-        'most_rated_movies': [
-            {
-                'id': m.id,
-                'title': m.title,
-                'rating_count': m.rating_count,
-                'rating_mean': m.rating_mean,
-                'bayesian_score': m.bayesian_score,
-                'language': m.language
-            }
-            for m in most_rated
-        ],
-        # Matplotlib Charts (Requirement 4)
-        'charts': {
-            'genre_analysis': charts['genre_analysis'],
-            'rating_distribution': charts['rating_distribution'],
-            'top_rated_movies': charts['top_rated_movies'],
-            'regional_comparison': charts['regional_comparison']
-        }
-    }), 200
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'error': 'Analytics generation failed',
+            'message': str(e),
+            'overview': {
+                'total_movies': Movie.query.count(),
+                'total_ratings': Rating.query.count(),
+                'average_rating': 0.0,
+                'min_ratings_threshold': min_ratings,
+                'qualified_top_rated_count': 0
+            },
+            'charts': {},
+            'top_rated_movies': [],
+            'genre_analysis': []
+        }), 500
 
 @analytics_bp.route('/charts/<chart_name>', methods=['GET'])
 def get_chart_image(chart_name):
@@ -138,47 +155,53 @@ def get_regional_analytics():
     Compares Telugu, Tamil, Malayalam, Kannada, Hindi, and English cinema
     on rating distribution, titles count, average runtime, and top genres.
     """
-    movies = Movie.query.all()
-    regional_data = defaultdict(lambda: {
-        'count': 0,
-        'total_rating': 0.0,
-        'rating_count_sum': 0,
-        'total_runtime': 0,
-        'runtime_count': 0,
-        'genres': defaultdict(int)
-    })
-
-    for m in movies:
-        lang = m.language
-        regional_data[lang]['count'] += 1
-        regional_data[lang]['total_rating'] += m.bayesian_score
-        regional_data[lang]['rating_count_sum'] += m.rating_count
-        if m.runtime_minutes:
-            regional_data[lang]['total_runtime'] += m.runtime_minutes
-            regional_data[lang]['runtime_count'] += 1
-        for g in m.genres:
-            regional_data[lang]['genres'][g.name] += 1
-
-    comparison = []
-    for lang, stats in regional_data.items():
-        cnt = stats['count']
-        avg_score = stats['total_rating'] / cnt if cnt > 0 else 0
-        avg_rt = stats['total_runtime'] / stats['runtime_count'] if stats['runtime_count'] > 0 else 0
-        top_g = sorted(stats['genres'].keys(), key=lambda k: stats['genres'][k], reverse=True)[:3]
-        
-        comparison.append({
-            'language': lang,
-            'titles_count': cnt,
-            'average_bayesian_score': round(avg_score, 2),
-            'total_ratings_sample': stats['rating_count_sum'],
-            'average_runtime_minutes': int(round(avg_rt)),
-            'top_genres': top_g
+    try:
+        movies = Movie.query.all()
+        regional_data = defaultdict(lambda: {
+            'count': 0,
+            'total_rating': 0.0,
+            'rating_count_sum': 0,
+            'total_runtime': 0,
+            'runtime_count': 0,
+            'genres': defaultdict(int)
         })
 
-    # Sort by titles count
-    comparison.sort(key=lambda x: x['titles_count'], reverse=True)
+        for m in movies:
+            lang = m.language
+            regional_data[lang]['count'] += 1
+            regional_data[lang]['total_rating'] += (m.bayesian_score or 0.0)
+            regional_data[lang]['rating_count_sum'] += (m.rating_count or 0)
+            if m.runtime_minutes:
+                regional_data[lang]['total_runtime'] += m.runtime_minutes
+                regional_data[lang]['runtime_count'] += 1
+            for g in m.genres:
+                regional_data[lang]['genres'][g.name] += 1
 
-    return jsonify({
-        'regional_comparison': comparison,
-        'dataset_disclaimer': 'Sourced from MovieLens benchmarks and curated regional film metadata. Sample reflects verified records in current catalogue.'
-    }), 200
+        comparison = []
+        for lang, stats in regional_data.items():
+            cnt = stats['count']
+            avg_score = stats['total_rating'] / cnt if cnt > 0 else 0
+            avg_rt = stats['total_runtime'] / stats['runtime_count'] if stats['runtime_count'] > 0 else 0
+            top_g = sorted(stats['genres'].keys(), key=lambda k: stats['genres'][k], reverse=True)[:3]
+            
+            comparison.append({
+                'language': lang,
+                'titles_count': cnt,
+                'average_bayesian_score': round(avg_score, 2),
+                'total_ratings_sample': stats['rating_count_sum'],
+                'average_runtime_minutes': int(round(avg_rt)),
+                'top_genres': top_g
+            })
+
+        comparison.sort(key=lambda x: x['titles_count'], reverse=True)
+
+        return jsonify({
+            'regional_comparison': comparison,
+            'dataset_disclaimer': 'Sourced from MovieLens benchmarks and curated regional film metadata. Sample reflects verified records in current catalogue.'
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to retrieve regional analytics',
+            'message': str(e),
+            'regional_comparison': []
+        }), 500

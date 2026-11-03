@@ -44,6 +44,8 @@ async function request(endpoint, options = {}) {
   }
 }
 
+export const API_BASE = PRIMARY_API_BASE;
+
 export const api = {
   // Auth
   register: (payload) => request('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
@@ -127,6 +129,7 @@ export const api = {
   // Analytics
   getRatingAnalytics: (minRatings = 5) => request(`/analytics/ratings?min_ratings=${encodeURIComponent(minRatings)}`),
   getRegionalAnalytics: () => request('/analytics/regional'),
+  getChartImageUrl: (chartName, minRatings = 5) => `${PRIMARY_API_BASE}/analytics/charts/${chartName}?min_ratings=${minRatings}&t=${Date.now()}`,
 
   // Admin
   getAdminOverview: () => request('/admin/overview'),
