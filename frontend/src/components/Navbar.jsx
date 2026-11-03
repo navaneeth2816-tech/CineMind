@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Film, Sparkles, BrainCircuit, Users, BarChart3, 
   Bookmark, ShieldAlert, LogOut, User, ChevronDown, Scale,
-  Compass, Info, Home
+  Compass, Info, Home, Layers
 } from 'lucide-react';
 
 export default function Navbar({ onSelectMovie }) {
@@ -21,49 +21,32 @@ export default function Navbar({ onSelectMovie }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
 
-  const handleAboutClick = (e) => {
+  const handleScrollTo = (targetId) => {
     if (location.pathname === '/') {
-      e.preventDefault();
-      const el = document.getElementById('about');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      }
+      const el = document.getElementById(targetId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else {
-      navigate('/#about');
+      navigate(`/#${targetId}`);
       setTimeout(() => {
-        const el = document.getElementById('about');
+        const el = document.getElementById(targetId);
         if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      }, 120);
     }
   };
 
-  const navLinks = [
-    { to: '/', label: 'Home', icon: Home },
-    { to: '/discover', label: 'Explore Movies', icon: Compass },
-    { to: '/taste-dna', label: 'Taste DNA', icon: Sparkles },
-    { to: '/analytics', label: 'Analytics', icon: BarChart3 }
-  ];
-
-  const moreTools = [
-    { to: '/compare', label: 'Compare Movies', icon: Scale, desc: 'Side-by-side metric comparison' },
-    { to: '/assistant', label: 'Smart Assistant', icon: BrainCircuit, desc: 'Conversational movie AI' },
-    { to: '/group', label: 'Group Room', icon: Users, desc: 'Watch party consensus voting' }
-  ];
-
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-[#060913]/90 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        {/* Brand Logo with Movie Icon */}
+        {/* CineMind Logo on the Left */}
         <Link to="/" className="flex items-center space-x-2.5 shrink-0 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 group-hover:scale-105 transition-transform duration-300">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-blue-600 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 group-hover:scale-105 transition-transform duration-300">
             <Film className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center space-x-1.5">
               <span className="text-lg font-black tracking-tight text-white group-hover:text-purple-300 transition">
-                Cine<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-orange-400">Mind</span>
+                Cine<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-400 to-orange-400">Mind</span>
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium -mt-0.5 hidden sm:block">
@@ -72,68 +55,80 @@ export default function Navbar({ onSelectMovie }) {
           </div>
         </Link>
 
-        {/* Primary Navigation Links */}
-        <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
-          {navLinks.map((item) => {
-            const Icon = item.icon;
-            const active = location.pathname === item.to || (item.to === '/discover' && location.pathname === '/explore');
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition ${
-                  active
-                    ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40 shadow-sm shadow-purple-900/30'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-900'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+        {/* Navigation Bar Links: Home, Explore Movies, Taste DNA, Analytics, Features and About Us */}
+        <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+          {/* Home */}
+          <Link
+            to="/"
+            className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition ${
+              location.pathname === '/'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40 shadow-sm shadow-purple-900/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span>Home</span>
+          </Link>
 
-          {/* More Tools Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setToolsMenuOpen(!toolsMenuOpen)}
-              onBlur={() => setTimeout(() => setToolsMenuOpen(false), 200)}
-              className="flex items-center space-x-1 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 rounded-xl transition"
-            >
-              <span>Features</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
+          {/* Explore Movies */}
+          <Link
+            to="/discover"
+            className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition ${
+              location.pathname === '/discover' || location.pathname === '/explore'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40 shadow-sm shadow-purple-900/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-blue-400" />
+            <span>Explore Movies</span>
+          </Link>
 
-            {toolsMenuOpen && (
-              <div className="absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 animate-fade-in divide-y divide-slate-800/80">
-                <div className="space-y-1 pb-1">
-                  {moreTools.map((tool) => {
-                    const ToolIcon = tool.icon;
-                    return (
-                      <Link
-                        key={tool.to}
-                        to={tool.to}
-                        className="block px-3 py-2 rounded-xl hover:bg-slate-800 text-left transition group"
-                        onClick={() => setToolsMenuOpen(false)}
-                      >
-                        <div className="flex items-center space-x-2 text-xs font-semibold text-slate-200 group-hover:text-purple-300">
-                          <ToolIcon className="w-3.5 h-3.5 text-purple-400" />
-                          <span>{tool.label}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-500 pl-5.5">{tool.desc}</p>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Taste DNA */}
+          <Link
+            to="/taste-dna"
+            className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition ${
+              location.pathname === '/taste-dna'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40 shadow-sm shadow-purple-900/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <span>Taste DNA</span>
+          </Link>
 
-          {/* About Us Link */}
+          {/* Analytics */}
+          <Link
+            to="/analytics"
+            className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition ${
+              location.pathname === '/analytics'
+                ? 'bg-purple-600/20 text-purple-300 border border-purple-500/40 shadow-sm shadow-purple-900/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-orange-400" />
+            <span>Analytics</span>
+          </Link>
+
+          {/* Features */}
+          <a
+            href="/#features"
+            onClick={(e) => {
+              e.preventDefault();
+              handleScrollTo('features');
+            }}
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 rounded-xl transition"
+          >
+            <Layers className="w-3.5 h-3.5 text-blue-400" />
+            <span>Features</span>
+          </a>
+
+          {/* About Us */}
           <a
             href="/#about"
-            onClick={handleAboutClick}
+            onClick={(e) => {
+              e.preventDefault();
+              handleScrollTo('about');
+            }}
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 rounded-xl transition"
           >
             <Info className="w-3.5 h-3.5 text-orange-400" />
@@ -155,20 +150,23 @@ export default function Navbar({ onSelectMovie }) {
           )}
         </nav>
 
-        {/* User Account / Auth Actions */}
+        {/* Watchlist, Login and Sign Up Options */}
         <div className="flex items-center space-x-2.5 shrink-0">
-          {/* Watchlist Counter */}
+          {/* Watchlist Option */}
           <Link
             to="/taste-dna#watchlist"
-            className="relative p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 transition"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 rounded-xl transition group"
             title="Your Watchlist"
           >
-            <Bookmark className="w-4 h-4" />
-            {watchlistIds.size > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-r from-purple-600 to-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
-                {watchlistIds.size}
-              </span>
-            )}
+            <div className="relative">
+              <Bookmark className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition" />
+              {watchlistIds.size > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-1 rounded-full bg-gradient-to-r from-purple-600 to-orange-500 text-white text-[9px] font-bold flex items-center justify-center shadow-md">
+                  {watchlistIds.size}
+                </span>
+              )}
+            </div>
+            <span className="hidden sm:inline">Watchlist</span>
           </Link>
 
           {isAuthenticated ? (
@@ -178,7 +176,7 @@ export default function Navbar({ onSelectMovie }) {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 className="flex items-center space-x-2 p-1.5 pr-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition"
               >
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-600 to-orange-500 text-white flex items-center justify-center text-xs font-bold">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-purple-600 via-blue-600 to-orange-500 text-white flex items-center justify-center text-xs font-bold shadow">
                   {user.name.charAt(0)}
                 </div>
                 <span className="text-xs font-medium text-slate-200 hidden sm:inline max-w-[100px] truncate">
@@ -247,7 +245,7 @@ export default function Navbar({ onSelectMovie }) {
               <button
                 type="button"
                 onClick={() => (openAuthModal ? openAuthModal('register') : setIsAuthModalOpen(true))}
-                className="flex items-center space-x-1 px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-orange-500 hover:from-purple-500 hover:via-indigo-500 hover:to-orange-400 rounded-xl shadow-md shadow-purple-600/30 hover:shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition"
+                className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-blue-600 to-orange-500 hover:from-purple-500 hover:via-blue-500 hover:to-orange-400 rounded-xl shadow-md shadow-purple-600/30 hover:shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Sign Up</span>
@@ -257,30 +255,74 @@ export default function Navbar({ onSelectMovie }) {
         </div>
       </div>
 
-      {/* Mobile Nav Pills */}
-      <div className="md:hidden flex items-center space-x-2 px-4 py-2 border-t border-slate-900 overflow-x-auto no-scrollbar">
-        {navLinks.map((item) => {
-          const Icon = item.icon;
-          const active = location.pathname === item.to || (item.to === '/discover' && location.pathname === '/explore');
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg shrink-0 ${
-                active
-                  ? 'bg-purple-600 text-white font-semibold'
-                  : 'bg-slate-900 text-slate-400 hover:text-white'
-              }`}
-            >
-              <Icon className="w-3 h-3" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+      {/* Responsive Mobile Navigation Pills */}
+      <div className="lg:hidden flex items-center space-x-2 px-4 py-2 border-t border-slate-900 overflow-x-auto no-scrollbar bg-[#060913]/95">
+        <Link
+          to="/"
+          className={`flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg shrink-0 ${
+            location.pathname === '/'
+              ? 'bg-purple-600 text-white font-semibold'
+              : 'bg-slate-900 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Home className="w-3 h-3" />
+          <span>Home</span>
+        </Link>
+
+        <Link
+          to="/discover"
+          className={`flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg shrink-0 ${
+            location.pathname === '/discover' || location.pathname === '/explore'
+              ? 'bg-purple-600 text-white font-semibold'
+              : 'bg-slate-900 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Compass className="w-3 h-3 text-blue-400" />
+          <span>Explore</span>
+        </Link>
+
+        <Link
+          to="/taste-dna"
+          className={`flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg shrink-0 ${
+            location.pathname === '/taste-dna'
+              ? 'bg-purple-600 text-white font-semibold'
+              : 'bg-slate-900 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-3 h-3 text-purple-400" />
+          <span>Taste DNA</span>
+        </Link>
+
+        <Link
+          to="/analytics"
+          className={`flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg shrink-0 ${
+            location.pathname === '/analytics'
+              ? 'bg-purple-600 text-white font-semibold'
+              : 'bg-slate-900 text-slate-400 hover:text-white'
+          }`}
+        >
+          <BarChart3 className="w-3 h-3 text-orange-400" />
+          <span>Analytics</span>
+        </Link>
+
+        <a
+          href="/#features"
+          onClick={(e) => {
+            e.preventDefault();
+            handleScrollTo('features');
+          }}
+          className="flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg shrink-0 bg-slate-900 text-slate-400 hover:text-white"
+        >
+          <Layers className="w-3 h-3 text-blue-400" />
+          <span>Features</span>
+        </a>
 
         <a
           href="/#about"
-          onClick={handleAboutClick}
+          onClick={(e) => {
+            e.preventDefault();
+            handleScrollTo('about');
+          }}
           className="flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg shrink-0 bg-slate-900 text-slate-400 hover:text-white"
         >
           <Info className="w-3 h-3 text-orange-400" />
