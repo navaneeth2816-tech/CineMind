@@ -48,7 +48,11 @@ function AppContent() {
     location.pathname === '/signup';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+      isLandingRoute 
+        ? 'bg-[#f8faff] text-slate-900 selection:bg-indigo-500 selection:text-white' 
+        : 'bg-slate-950 text-slate-100 selection:bg-purple-600 selection:text-white'
+    }`}>
       {/* Top Navbar */}
       <Navbar onSelectMovie={handleOpenDecisionReport} />
 
@@ -77,13 +81,13 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Footer for Non-Landing Pages (Landing page includes its own rich 4-column footer) */}
+      {/* Footer for Non-Landing Pages (Landing page includes its own dedicated SaaS footer) */}
       {!isLandingRoute && (
         <footer className="border-t border-slate-900 bg-slate-950/70 py-6 px-4 text-center text-xs text-slate-500 space-y-1.5 mt-auto">
           <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400">
             <span className="font-bold text-slate-300">CineMind</span>
             <span>•</span>
-            <span>Movie Ratings Analysis & Recommendation System</span>
+            <span>Movie Recommendation System</span>
             <span>•</span>
             <span>React & Python Flask with MySQL</span>
           </div>
