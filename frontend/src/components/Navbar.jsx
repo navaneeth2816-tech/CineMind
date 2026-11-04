@@ -105,7 +105,7 @@ export default function Navbar({ onSelectMovie }) {
             </button>
           </nav>
 
-          {/* Sign In & Get Started Buttons on the Right */}
+          {/* Sign In Button on the Right */}
           <div className="flex items-center space-x-3 shrink-0">
             {isAuthenticated ? (
               <div className="flex items-center space-x-2.5">
@@ -167,22 +167,13 @@ export default function Navbar({ onSelectMovie }) {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="flex items-center">
                 <button
                   type="button"
                   onClick={() => (openAuthModal ? openAuthModal('login') : setIsAuthModalOpen(true))}
-                  className="px-3.5 py-2 text-sm font-semibold text-slate-700 hover:text-indigo-600 transition cursor-pointer"
+                  className="inline-flex items-center px-4 sm:px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 rounded-xl shadow-md shadow-indigo-600/25 hover:shadow-indigo-600/35 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
                 >
                   Sign In
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => (openAuthModal ? openAuthModal('register') : setIsAuthModalOpen(true))}
-                  className="inline-flex items-center space-x-1.5 px-4 sm:px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 rounded-xl shadow-md shadow-indigo-600/25 hover:shadow-indigo-600/35 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Get Started</span>
                 </button>
               </div>
             )}
@@ -401,21 +392,13 @@ export default function Navbar({ onSelectMovie }) {
               )}
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center">
               <button
                 type="button"
                 onClick={() => (openAuthModal ? openAuthModal('login') : setIsAuthModalOpen(true))}
-                className="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 rounded-xl transition"
+                className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-blue-600 to-orange-500 hover:from-purple-500 hover:via-blue-500 hover:to-orange-400 rounded-xl shadow-md shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
               >
                 Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => (openAuthModal ? openAuthModal('register') : setIsAuthModalOpen(true))}
-                className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-blue-600 to-orange-500 hover:from-purple-500 hover:via-blue-500 hover:to-orange-400 rounded-xl shadow-md shadow-purple-600/30 hover:scale-[1.02] active:scale-[0.98] transition"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Get Started</span>
               </button>
             </div>
           )}
