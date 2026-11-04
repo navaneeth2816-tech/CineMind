@@ -39,6 +39,12 @@ export default function Navbar({ onSelectMovie }) {
     }
   };
 
+  const handleLogout = () => {
+    setUserMenuOpen(false);
+    logout();
+    navigate('/');
+  };
+
   // -------------------------------------------------------------
   // 1. PUBLIC SAAS LANDING PAGE NAVBAR (SpaceBasic-inspired)
   // -------------------------------------------------------------
@@ -149,10 +155,7 @@ export default function Navbar({ onSelectMovie }) {
                       <div className="pt-1">
                         <button
                           type="button"
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            logout();
-                          }}
+                          onClick={handleLogout}
                           className="w-full text-left px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 rounded-lg flex items-center space-x-2"
                         >
                           <LogOut className="w-3.5 h-3.5" />
@@ -387,10 +390,7 @@ export default function Navbar({ onSelectMovie }) {
                   <div className="pt-1">
                     <button
                       type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        logout();
-                      }}
+                      onClick={handleLogout}
                       className="w-full text-left px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-950/30 rounded-lg flex items-center space-x-2"
                     >
                       <LogOut className="w-3.5 h-3.5" />

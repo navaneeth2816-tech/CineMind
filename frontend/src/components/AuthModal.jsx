@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { X, Lock, Mail, User, Check, AlertCircle, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose }) {
   const { login, register, authModalMode } = useAuth();
+  const navigate = useNavigate();
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -64,6 +66,7 @@ export default function AuthModal({ isOpen, onClose }) {
         await login(email, password);
       }
       onClose();
+      navigate('/discover');
     } catch (err) {
       setError(err.message || 'Authentication failed. Please check your credentials.');
     } finally {
