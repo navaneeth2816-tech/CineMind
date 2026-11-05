@@ -279,9 +279,13 @@ def get_movie_poster(movie_id):
     if not movie or not movie.poster_url:
         return jsonify({'error': 'Poster not found'}), 404
         
+    target_url = movie.poster_url
+    if target_url.startswith('/') and not target_url.startswith('//'):
+        target_url = f"https://image.tmdb.org/t/p/w500{target_url}"
+
     try:
         req = urllib.request.Request(
-            movie.poster_url,
+            target_url,
             headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         )
         with urllib.request.urlopen(req, timeout=8) as resp:

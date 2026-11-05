@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import MoviePoster from '../components/MoviePoster';
-import { getVerifiedPoster } from '../constants/posters';
+import { normalizePosterUrl } from '../constants/posters';
 import {
   Film, Sparkles, BrainCircuit, BarChart3, Compass,
   Star, ArrowRight, CheckCircle2, ShieldCheck, Heart,
@@ -110,7 +110,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
         if (isMounted && res && res.movies && res.movies.length > 0) {
           const enriched = res.movies.map((m, idx) => ({
             ...m,
-            poster_url: m.poster_url || getVerifiedPoster(m.title) || FALLBACK_FEATURED[idx % FALLBACK_FEATURED.length]?.poster_url,
+            poster_url: normalizePosterUrl(m.poster_url) || FALLBACK_FEATURED[idx % FALLBACK_FEATURED.length]?.poster_url,
             confidence_pct: m.rating_count ? Math.min(99.4, +(92 + (m.rating_count / 300) * 7.4).toFixed(1)) : (98.6 - idx * 0.3)
           }));
           setFeaturedMovies(enriched);
