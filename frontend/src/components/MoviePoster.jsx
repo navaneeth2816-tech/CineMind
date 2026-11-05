@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Film } from 'lucide-react';
+import { getVerifiedPoster } from '../constants/posters';
 
 /**
- * Robust MoviePoster component with:
- * - Graceful fallback SVG / card on broken or missing image URL
- * - Prevention of infinite fallback loops (using state to stop re-fetching)
- * - Lazy loading for optimal performance
- * - Accessible alt attributes
+ * Robust, production-grade MoviePoster component with:
+ * - Direct TMDB image rendering with referrerPolicy="no-referrer"
+ * - Intelligent self-healing fallback to verified TMDB registry by title
+ * - Smooth skeleton loading state (prevents broken image icons)
+ * - Graceful fallback card only when all image sources are exhausted
+ * - Preserves existing layout, dimensions, and responsive aspect ratios
  */
 export default function MoviePoster({
   src,
@@ -18,11 +20,46 @@ export default function MoviePoster({
   aspectRatio = 'aspect-[2/3]',
   loading = 'lazy'
 }) {
-  const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const getInitialSource = () => {
+    if (src && typeof src === 'string' && src.trim() !== '') {
+      return src;
+    }
+    return getVerifiedPoster(title);
+  };
 
-  // If no source provided or error encountered, render fallback
-  if (!src || hasError) {
+  const [effectiveSrc, setEffectiveSrc] = useState(getInitialSource);
+  const [hasError, setHasError] = useState(!getInitialSource());
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [triedVerifiedFallback, setTriedVerifiedFallback] = useState(
+    Boolean(!src && getVerifiedPoster(title))
+  );
+
+  // Synchronize state whenever src or title prop updates
+  useEffect(() => {
+    const initial = (src && typeof src === 'string' && src.trim() !== '')
+      ? src
+      : getVerifiedPoster(title);
+
+    setEffectiveSrc(initial);
+    setIsLoaded(false);
+    setHasError(!initial);
+    setTriedVerifiedFallback(Boolean(!src && initial));
+  }, [src, title]);
+
+  const handleImageError = () => {
+    if (!triedVerifiedFallback) {
+      const verified = getVerifiedPoster(title);
+      if (verified && verified !== effectiveSrc) {
+        setTriedVerifiedFallback(true);
+        setEffectiveSrc(verified);
+        return;
+      }
+    }
+    setHasError(true);
+  };
+
+  // If no source provided or error encountered, render professional fallback
+  if (!effectiveSrc || hasError) {
     return (
       <div
         className={`relative ${aspectRatio} w-full bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-3 text-center border border-slate-700/50 rounded-xl overflow-hidden select-none ${className}`}
@@ -60,11 +97,13 @@ export default function MoviePoster({
         </div>
       )}
       <img
-        src={src}
+        src={effectiveSrc}
         alt={alt || title || 'Movie poster'}
         loading={loading}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
         onLoad={() => setIsLoaded(true)}
-        onError={() => setHasError(true)}
+        onError={handleImageError}
         className={`w-full h-full object-cover transition-opacity duration-300 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}

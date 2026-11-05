@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import MoviePoster from '../components/MoviePoster';
+import { getVerifiedPoster } from '../constants/posters';
 import {
   Film, Sparkles, BrainCircuit, BarChart3, Compass,
   Star, ArrowRight, CheckCircle2, ShieldCheck, Heart,
@@ -12,7 +13,7 @@ import {
   TrendingUp, ThumbsUp, Zap
 } from 'lucide-react';
 
-// Curated verified benchmark fallback movies to guarantee instant visual rendering
+// Curated verified benchmark fallback movies covering all 6 regional cinema industries
 const FALLBACK_FEATURED = [
   {
     id: 1,
@@ -24,11 +25,63 @@ const FALLBACK_FEATURED = [
     rating_mean: 4.88,
     rating_count: 360,
     confidence_pct: 98.6,
-    poster_url: 'https://image.tmdb.org/t/p/w500/nEufeZlyAOLqO2brrs0yeMu1QXO.jpg',
+    poster_url: 'https://image.tmdb.org/t/p/w500/wE0I6efAW4cDDmZQWtwZMOW44EJ.jpg',
     genres: ['Action', 'Drama']
   },
   {
-    id: 2,
+    id: 6,
+    title: 'Vikram',
+    release_year: 2022,
+    language: 'Tamil',
+    runtime_minutes: 174,
+    bayesian_score: 4.70,
+    rating_mean: 4.72,
+    rating_count: 72,
+    confidence_pct: 97.4,
+    poster_url: 'https://image.tmdb.org/t/p/w500/774UV1aCURb4s4JfEFg3IEMu5Zj.jpg',
+    genres: ['Action', 'Thriller', 'Crime']
+  },
+  {
+    id: 11,
+    title: 'Drishyam',
+    release_year: 2013,
+    language: 'Malayalam',
+    runtime_minutes: 160,
+    bayesian_score: 4.78,
+    rating_mean: 4.81,
+    rating_count: 90,
+    confidence_pct: 98.2,
+    poster_url: 'https://image.tmdb.org/t/p/w500/gPBldHTnqpgsrnDnSrAlFwE6Q1t.jpg',
+    genres: ['Crime', 'Mystery', 'Thriller']
+  },
+  {
+    id: 26,
+    title: 'Kantara',
+    release_year: 2022,
+    language: 'Kannada',
+    runtime_minutes: 148,
+    bayesian_score: 4.74,
+    rating_mean: 4.78,
+    rating_count: 245,
+    confidence_pct: 97.8,
+    poster_url: 'https://image.tmdb.org/t/p/w500/jIsKmkxMzdCZ0Ux1GVSnu8m6Na6.jpg',
+    genres: ['Action', 'Drama', 'Mystery']
+  },
+  {
+    id: 18,
+    title: 'Dangal',
+    release_year: 2016,
+    language: 'Hindi',
+    runtime_minutes: 161,
+    bayesian_score: 4.74,
+    rating_mean: 4.77,
+    rating_count: 88,
+    confidence_pct: 97.9,
+    poster_url: 'https://image.tmdb.org/t/p/w500/cJRPOLEexI7qp2DKtFfCh7YaaUG.jpg',
+    genres: ['Action', 'Biography', 'Drama']
+  },
+  {
+    id: 22,
     title: 'Interstellar',
     release_year: 2014,
     language: 'English',
@@ -39,32 +92,6 @@ const FALLBACK_FEATURED = [
     confidence_pct: 99.2,
     poster_url: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
     genres: ['Adventure', 'Drama', 'Sci-Fi']
-  },
-  {
-    id: 3,
-    title: 'Kantara',
-    release_year: 2022,
-    language: 'Kannada',
-    runtime_minutes: 148,
-    bayesian_score: 4.74,
-    rating_mean: 4.78,
-    rating_count: 245,
-    confidence_pct: 97.8,
-    poster_url: 'https://image.tmdb.org/t/p/w500/5v6k6pGsmhK8v2g3Yl9m8JpY9Pz.jpg',
-    genres: ['Action', 'Drama', 'Mystery']
-  },
-  {
-    id: 4,
-    title: 'Dune: Part Two',
-    release_year: 2024,
-    language: 'English',
-    runtime_minutes: 166,
-    bayesian_score: 4.82,
-    rating_mean: 4.85,
-    rating_count: 310,
-    confidence_pct: 98.4,
-    poster_url: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
-    genres: ['Action', 'Adventure', 'Sci-Fi']
   }
 ];
 
@@ -74,7 +101,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
   const [featuredMovies, setFeaturedMovies] = useState(FALLBACK_FEATURED);
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
 
-  // Fetch actual movie records from MySQL database on mount
+  // Fetch actual movie records from database on mount
   useEffect(() => {
     let isMounted = true;
     async function loadFeatured() {
@@ -83,6 +110,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
         if (isMounted && res && res.movies && res.movies.length > 0) {
           const enriched = res.movies.map((m, idx) => ({
             ...m,
+            poster_url: m.poster_url || getVerifiedPoster(m.title) || FALLBACK_FEATURED[idx % FALLBACK_FEATURED.length]?.poster_url,
             confidence_pct: m.rating_count ? Math.min(99.4, +(92 + (m.rating_count / 300) * 7.4).toFixed(1)) : (98.6 - idx * 0.3)
           }));
           setFeaturedMovies(enriched);
@@ -95,13 +123,16 @@ export default function LandingPage({ onOpenDecisionReport }) {
     return () => { isMounted = false; };
   }, []);
 
+  const previewCount = Math.min(6, featuredMovies.length);
+
   // Auto-cycle through top preview spotlight cards
   useEffect(() => {
+    if (previewCount <= 1) return;
     const timer = setInterval(() => {
-      setActivePreviewIndex(prev => (prev + 1) % Math.min(4, featuredMovies.length));
+      setActivePreviewIndex(prev => (prev + 1) % previewCount);
     }, 5500);
     return () => clearInterval(timer);
-  }, [featuredMovies.length]);
+  }, [previewCount]);
 
   const handleExploreClick = () => {
     navigate('/discover');
@@ -221,6 +252,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
                   title="Click to view Decision Report"
                 >
                   <MoviePoster
+                    key={`hero-preview-${currentPreview.id || currentPreview.title}`}
                     src={currentPreview.poster_url}
                     alt={currentPreview.title}
                     title={currentPreview.title}
@@ -331,7 +363,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
                   <div className="flex items-center justify-between pt-1">
                     <button
                       type="button"
-                      onClick={() => setActivePreviewIndex(prev => (prev - 1 + Math.min(4, featuredMovies.length)) % Math.min(4, featuredMovies.length))}
+                      onClick={() => setActivePreviewIndex(prev => (prev - 1 + previewCount) % previewCount)}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
                       title="Previous Movie"
                     >
@@ -339,7 +371,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
                     </button>
 
                     <div className="flex space-x-2">
-                      {[0, 1, 2, 3].map(idx => (
+                      {Array.from({ length: previewCount }).map((_, idx) => (
                         <button
                           key={idx}
                           type="button"
@@ -356,7 +388,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
 
                     <button
                       type="button"
-                      onClick={() => setActivePreviewIndex(prev => (prev + 1) % Math.min(4, featuredMovies.length))}
+                      onClick={() => setActivePreviewIndex(prev => (prev + 1) % previewCount)}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
                       title="Next Movie"
                     >
