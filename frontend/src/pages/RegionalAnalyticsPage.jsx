@@ -55,13 +55,13 @@ function ChartCard({
         {loading ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-2 text-slate-500">
             <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-[11px] text-slate-400">Rendering Matplotlib chart...</span>
+            <span className="text-[11px] text-slate-400">Rendering visual chart...</span>
           </div>
         ) : imageError ? (
           <div className="p-8 flex flex-col items-center justify-center space-y-3 text-center">
             <AlertCircle className="w-7 h-7 text-rose-400" />
             <div className="text-xs text-rose-300 font-semibold">Chart generation temporarily unavailable</div>
-            <p className="text-[11px] text-slate-500 max-w-xs">Failed to render Matplotlib output from backend server.</p>
+            <p className="text-[11px] text-slate-500 max-w-xs">Failed to load visual chart from server.</p>
             <button
               type="button"
               onClick={handleRetry}
@@ -141,7 +141,7 @@ export default function RegionalAnalyticsPage() {
   }, [minRatings]);
 
   const overview = globalStats?.overview;
-  const numpyStats = globalStats?.numpy_statistics || {};
+  const ratingStats = globalStats?.numpy_statistics || {};
   const starDist = globalStats?.star_distribution_pct || {};
   const charts = globalStats?.charts || {};
   const topRatedMovies = globalStats?.top_rated_movies || [];
@@ -157,13 +157,10 @@ export default function RegionalAnalyticsPage() {
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-2xl font-black text-white tracking-tight">Movie Analytics & Visualizations</h1>
-              <span className="px-2.5 py-0.5 text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/80 rounded-full">
-                Pandas • NumPy • Matplotlib
-              </span>
+              <h1 className="text-2xl font-black text-white tracking-tight">Movie Analytics & Insights</h1>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Comprehensive ratings intelligence, statistical distributions, and automated chart visualizations from live MySQL data
+              Explore movie trends, audience ratings, genre performance, and regional cinema insights through interactive visualizations.
             </p>
           </div>
         </div>
@@ -174,19 +171,19 @@ export default function RegionalAnalyticsPage() {
             type="button"
             onClick={() => fetchAnalytics(minRatings)}
             disabled={loading}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition disabled:opacity-50"
-            title="Fetch latest database records and re-render charts"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition disabled:opacity-50 cursor-pointer"
+            title="Fetch latest verified data and update charts"
           >
             <RotateCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-indigo-400' : ''}`} />
-            <span>Refresh Live Data</span>
+            <span>Refresh Insights</span>
           </button>
 
           {/* View Filter Tabs */}
           <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-950/80 border border-slate-800 rounded-2xl">
             {[
               { id: 'all', label: 'All-in-One Dashboard', icon: Layers },
-              { id: 'charts', label: 'Matplotlib Charts', icon: PieChart },
-              { id: 'stats', label: 'NumPy Statistics', icon: Calculator },
+              { id: 'charts', label: 'Interactive Charts', icon: PieChart },
+              { id: 'stats', label: 'Rating Statistics', icon: Calculator },
               { id: 'top-rated', label: 'Top-Rated Films', icon: TrendingUp }
             ].map(tab => {
               const Icon = tab.icon;
@@ -194,7 +191,7 @@ export default function RegionalAnalyticsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     activeTab === tab.id
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
@@ -232,28 +229,28 @@ export default function RegionalAnalyticsPage() {
       {/* Global Overview KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-lg">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Catalogue Evaluated</div>
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Movies Analyzed</div>
           <div className="text-2xl font-black text-white mt-1">{overview?.total_movies || 0} Titles</div>
           <div className="text-[10px] text-indigo-400 mt-0.5 flex items-center space-x-1">
             <CheckCircle2 className="w-3 h-3" />
-            <span>Connected to MySQL Database</span>
+            <span>Curated Film Catalogue</span>
           </div>
         </div>
 
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-lg">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total Rating Sample</div>
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Total Ratings</div>
           <div className="text-2xl font-black text-white mt-1">{(overview?.total_ratings || 0).toLocaleString()}</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Pandas DataFrame Aggregated</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Audience & Critic Reviews</div>
         </div>
 
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-lg">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">NumPy Sample Mean</div>
-          <div className="text-2xl font-black text-amber-400 mt-1">{numpyStats?.mean || overview?.average_rating || 0}★</div>
-          <div className="text-[10px] text-slate-400 mt-0.5">Median: {numpyStats?.median || 0}★ (±{numpyStats?.std_dev || 0} σ)</div>
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Average Movie Rating</div>
+          <div className="text-2xl font-black text-amber-400 mt-1">{ratingStats?.mean || overview?.average_rating || 0}★</div>
+          <div className="text-[10px] text-slate-400 mt-0.5">Median: {ratingStats?.median || 0}★ (±{ratingStats?.std_dev || 0} deviation)</div>
         </div>
 
         <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-lg">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Regional Industries</div>
+          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Languages Covered</div>
           <div className="text-2xl font-black text-violet-400 mt-1">{regionalData.length} Languages</div>
           <div className="text-[10px] text-slate-400 mt-0.5">Telugu, Tamil, Hindi, Global</div>
         </div>
@@ -262,25 +259,25 @@ export default function RegionalAnalyticsPage() {
       {loading && !globalStats && (
         <div className="p-12 flex flex-col items-center justify-center space-y-3 bg-slate-900/50 rounded-2xl border border-slate-800">
           <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-400">Computing analytics and rendering Matplotlib visualizations...</p>
+          <p className="text-xs text-slate-400">Analyzing movie trends and generating insights...</p>
         </div>
       )}
 
-      {/* SECTION 1: Matplotlib Data Visualizations (Requirement 4 & 5) */}
+      {/* SECTION 1: Interactive Data Visualizations */}
       {(activeTab === 'all' || activeTab === 'charts') && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-800 pb-3">
             <div className="flex items-center space-x-2">
               <PieChart className="w-5 h-5 text-indigo-400" />
               <h2 className="text-base font-bold text-white tracking-wide">
-                Matplotlib Visualizations
+                Interactive Visualizations
               </h2>
               <span className="text-xs text-slate-400">
-                (Generated dynamically by Python Matplotlib backend)
+                (Generated dynamically from verified platform data)
               </span>
             </div>
             <div className="text-[11px] text-slate-400 italic">
-              Click any chart to inspect high-resolution render
+              Click any chart to inspect high-resolution view
             </div>
           </div>
 
@@ -289,28 +286,28 @@ export default function RegionalAnalyticsPage() {
             <ChartCard
               title="1. Genre Rating Analysis"
               icon={Film}
-              badge="Pandas GroupBy & Matplotlib"
+              badge="Genre Performance"
               badgeColor="bg-indigo-950 text-indigo-300 border-indigo-800/60"
               chartUrl={charts?.genre_analysis}
               chartEndpoint="genre-analysis"
               minRatings={minRatings}
               loading={loading && !charts?.genre_analysis}
               onOpenZoom={setSelectedChart}
-              description="Aggregates average audience rating by genre across all catalogue entries using Pandas relational grouping."
+              description="Aggregates average audience rating by genre across all catalogue entries to highlight top-performing film categories."
             />
 
             {/* Chart 2: Rating Distribution */}
             <ChartCard
               title="2. Rating Distribution (1★ to 5★)"
               icon={Star}
-              badge="NumPy Bincount & Matplotlib"
+              badge="Rating Distribution"
               badgeColor="bg-amber-950 text-amber-300 border-amber-800/60"
               chartUrl={charts?.rating_distribution}
               chartEndpoint="rating-distribution"
               minRatings={minRatings}
               loading={loading && !charts?.rating_distribution}
               onOpenZoom={setSelectedChart}
-              description="Illustrates exact rating frequencies computed via NumPy bin counting, showing volume concentration in 4★ and 5★ tiers."
+              description="Illustrates exact audience rating frequencies, highlighting concentration across 1-star to 5-star evaluation tiers."
             />
 
             {/* Chart 3: Top-Rated Movies with Threshold */}
@@ -344,74 +341,74 @@ export default function RegionalAnalyticsPage() {
         </div>
       )}
 
-      {/* SECTION 2: NumPy Statistical Analysis (Requirement 3) */}
+      {/* SECTION 2: Rating Statistical Analysis */}
       {(activeTab === 'all' || activeTab === 'stats') && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-5">
           <div className="flex items-center space-x-2 border-b border-slate-800 pb-3">
             <Calculator className="w-5 h-5 text-indigo-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              NumPy Rating Statistics & Parameter Estimation (Requirement 3)
+              Comprehensive Rating Statistics & Dispersion
             </h2>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-center">
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Sample Mean</span>
-              <div className="text-lg font-black text-amber-400 mt-1">{numpyStats?.mean || 0}★</div>
-              <span className="text-[9px] text-slate-500">np.mean</span>
+              <div className="text-lg font-black text-amber-400 mt-1">{ratingStats?.mean || 0}★</div>
+              <span className="text-[9px] text-slate-500">Mean</span>
             </div>
 
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Median Rating</span>
-              <div className="text-lg font-black text-indigo-400 mt-1">{numpyStats?.median || 0}★</div>
-              <span className="text-[9px] text-slate-500">np.median</span>
+              <div className="text-lg font-black text-indigo-400 mt-1">{ratingStats?.median || 0}★</div>
+              <span className="text-[9px] text-slate-500">Median</span>
             </div>
 
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Std Deviation</span>
-              <div className="text-lg font-black text-violet-400 mt-1">±{numpyStats?.std_dev || 0}</div>
-              <span className="text-[9px] text-slate-500">np.std (σ)</span>
+              <div className="text-lg font-black text-violet-400 mt-1">±{ratingStats?.std_dev || 0}</div>
+              <span className="text-[9px] text-slate-500">Std Dev (σ)</span>
             </div>
 
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Variance</span>
-              <div className="text-lg font-black text-slate-200 mt-1">{numpyStats?.variance || 0}</div>
-              <span className="text-[9px] text-slate-500">np.var (σ²)</span>
+              <div className="text-lg font-black text-slate-200 mt-1">{ratingStats?.variance || 0}</div>
+              <span className="text-[9px] text-slate-500">Variance (σ²)</span>
             </div>
 
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Minimum</span>
-              <div className="text-lg font-black text-rose-400 mt-1">{numpyStats?.min || 0}★</div>
-              <span className="text-[9px] text-slate-500">np.min</span>
+              <div className="text-lg font-black text-rose-400 mt-1">{ratingStats?.min || 0}★</div>
+              <span className="text-[9px] text-slate-500">Minimum</span>
             </div>
 
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">Maximum</span>
-              <div className="text-lg font-black text-emerald-400 mt-1">{numpyStats?.max || 0}★</div>
-              <span className="text-[9px] text-slate-500">np.max</span>
+              <div className="text-lg font-black text-emerald-400 mt-1">{ratingStats?.max || 0}★</div>
+              <span className="text-[9px] text-slate-500">Maximum</span>
             </div>
 
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">25th %-tile (Q1)</span>
-              <div className="text-lg font-black text-cyan-400 mt-1">{numpyStats?.percentile_25 || 0}★</div>
-              <span className="text-[9px] text-slate-500">np.percentile</span>
+              <div className="text-lg font-black text-cyan-400 mt-1">{ratingStats?.percentile_25 || 0}★</div>
+              <span className="text-[9px] text-slate-500">Lower Quartile</span>
             </div>
 
             <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">75th %-tile (Q3)</span>
-              <div className="text-lg font-black text-cyan-400 mt-1">{numpyStats?.percentile_75 || 0}★</div>
-              <span className="text-[9px] text-slate-500">np.percentile</span>
+              <div className="text-lg font-black text-cyan-400 mt-1">{ratingStats?.percentile_75 || 0}★</div>
+              <span className="text-[9px] text-slate-500">Upper Quartile</span>
             </div>
           </div>
 
           {/* Star Distribution Progress Bars */}
           <div className="pt-4 border-t border-slate-800 space-y-2.5">
             <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
-              Rating Frequency Breakdown (NumPy Bincount)
+              Rating Frequency Breakdown
             </span>
             {[5, 4, 3, 2, 1].map(star => {
-              const count = numpyStats?.star_distribution?.[star] || 0;
-              const pct = numpyStats?.star_percentages?.[star] || 0;
+              const count = ratingStats?.star_distribution?.[star] || 0;
+              const pct = ratingStats?.star_percentages?.[star] || 0;
               return (
                 <div key={star} className="space-y-1">
                   <div className="flex justify-between text-xs text-slate-300">
@@ -431,7 +428,7 @@ export default function RegionalAnalyticsPage() {
         </div>
       )}
 
-      {/* SECTION 3: Top-Rated Movies & Minimum Rating Threshold Rule (Requirement 5) */}
+      {/* SECTION 3: Top-Rated Movies & Minimum Rating Threshold */}
       {(activeTab === 'all' || activeTab === 'top-rated') && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
@@ -439,7 +436,7 @@ export default function RegionalAnalyticsPage() {
               <div className="flex items-center space-x-2">
                 <TrendingUp className="w-5 h-5 text-emerald-400" />
                 <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Verified Top-Rated Movies (Minimum-Rating Rule)
+                  Verified Top-Rated Movies (Minimum-Rating Threshold)
                 </h2>
               </div>
               <p className="text-xs text-slate-400 mt-1">
@@ -472,7 +469,7 @@ export default function RegionalAnalyticsPage() {
               Showing <strong className="text-emerald-400">{topRatedMovies.length}</strong> movies meeting threshold (minimum {minRatings} reviews):
             </span>
             <span className="text-[11px] text-slate-500">
-              Evaluated with Pandas DataFrame filter
+              Evaluated with verified volume thresholds
             </span>
           </div>
 
@@ -509,13 +506,13 @@ export default function RegionalAnalyticsPage() {
         </div>
       )}
 
-      {/* SECTION 4: Pandas Genre Aggregation Table (Requirement 2) */}
+      {/* SECTION 4: Genre Performance Breakdown */}
       {(activeTab === 'all' || activeTab === 'stats') && (
         <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl space-y-4">
           <div className="flex items-center space-x-2 border-b border-slate-800 pb-3">
             <Film className="w-5 h-5 text-indigo-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              Pandas Genre Rating Breakdown (Requirement 2)
+              Genre Performance Breakdown
             </h2>
           </div>
 
@@ -590,14 +587,14 @@ export default function RegionalAnalyticsPage() {
         </div>
       )}
 
-      {/* Data Provenance & Ethics Disclosure (PRD 3.1 & 6.14) */}
+      {/* Data Integrity & Methodology Overview */}
       <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-xs text-slate-400 flex items-start space-x-3">
         <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          <strong className="text-slate-300">Data Integrity, Privacy & Provenance Disclosure:</strong> {disclaimer}
-          All ratings are stored in MySQL and analyzed dynamically using Pandas DataFrames and NumPy arrays.
-          No user private identifiers (names, emails, user IDs) are exposed or processed in analytics computations.
-          Visual charts are generated on the server using Matplotlib and styled to match CineMind's dark theme.
+          <strong className="text-slate-300">Data Integrity & Methodology:</strong> {disclaimer ? `${disclaimer} ` : ''}
+          All audience evaluations and cinema metrics are analyzed dynamically to ensure statistical accuracy and mitigate low-sample bias.
+          User privacy is strictly protected: personal identifiers are never exposed or processed in public analytics computations.
+          Visualizations and statistical charts update in real-time to reflect verified ratings across regional cinema industries.
         </p>
       </div>
 
@@ -612,7 +609,7 @@ export default function RegionalAnalyticsPage() {
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-3 px-2">
-              <span className="text-xs font-bold text-white">High-Resolution Chart (Matplotlib)</span>
+              <span className="text-xs font-bold text-white">High-Resolution Visual Chart</span>
               <button
                 type="button"
                 onClick={() => setSelectedChart(null)}
