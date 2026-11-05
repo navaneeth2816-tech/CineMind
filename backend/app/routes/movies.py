@@ -266,3 +266,63 @@ def get_languages():
     """Returns distinct languages available in catalogue"""
     langs = db.session.query(Movie.language).distinct().order_by(Movie.language).all()
     return jsonify({'languages': [l[0] for l in langs if l[0]]}), 200
+
+@movies_bp.route('/<int:movie_id>/poster', methods=['GET'])
+def get_movie_poster(movie_id):
+    """
+    Direct proxy/fallback endpoint to serve movie poster images with resilient caching.
+    Bypasses ISP DNS blocking of image.tmdb.org by proxying through backend.
+    """
+    import urllib.request
+    from flask import Response
+    movie = Movie.query.get(movie_id)
+    if not movie or not movie.poster_url:
+        return jsonify({'error': 'Poster not found'}), 404
+        
+    try:
+        req = urllib.request.Request(
+            movie.poster_url,
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            content_type = resp.headers.get('Content-Type', 'image/jpeg')
+            data = resp.read()
+            return Response(
+                data,
+                mimetype=content_type,
+                headers={
+                    'Cache-Control': 'public, max-age=604800, immutable',
+                    'Access-Control-Allow-Origin': '*'
+                }
+            )
+    except Exception as e:
+        return jsonify({'error': f'Failed to fetch poster: {str(e)}'}), 502
+
+@movies_bp.route('/poster-proxy', methods=['GET'])
+def proxy_external_poster():
+    """
+    Proxies external poster URL through backend with security domain allowlist.
+    """
+    import urllib.request
+    from flask import Response
+    url = request.args.get('url')
+    if not url or not (url.startswith('https://image.tmdb.org/') or url.startswith('http://image.tmdb.org/')):
+        return jsonify({'error': 'Invalid poster URL'}), 400
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            content_type = resp.headers.get('Content-Type', 'image/jpeg')
+            data = resp.read()
+            return Response(
+                data,
+                mimetype=content_type,
+                headers={
+                    'Cache-Control': 'public, max-age=604800, immutable',
+                    'Access-Control-Allow-Origin': '*'
+                }
+            )
+    except Exception as e:
+        return jsonify({'error': f'Proxy failed: {str(e)}'}), 502

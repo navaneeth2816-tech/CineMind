@@ -78,6 +78,10 @@ class Movie(db.Model):
     reviews = db.relationship('MovieReview', backref='movie', lazy='dynamic', cascade='all, delete-orphan')
 
     def to_dict(self, include_genres=True):
+        poster = self.poster_url
+        if poster and poster.startswith('/') and not poster.startswith('//'):
+            poster = f"https://image.tmdb.org/t/p/w500{poster}"
+
         data = {
             'id': self.id,
             'title': self.title,
@@ -85,7 +89,7 @@ class Movie(db.Model):
             'language': self.language,
             'runtime_minutes': self.runtime_minutes,
             'overview': self.overview,
-            'poster_url': self.poster_url,
+            'poster_url': poster,
             'metadata_source': self.metadata_source,
             'rating_mean': round(self.rating_mean, 2) if self.rating_mean else 0.0,
             'rating_count': self.rating_count,

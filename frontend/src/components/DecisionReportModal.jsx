@@ -98,6 +98,7 @@ export default function DecisionReportModal({ movieId, isOpen, onClose, onMovieS
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
               <div className="md:col-span-1 flex justify-center">
                 <MoviePoster
+                  id={movie.id}
                   src={movie.poster_url}
                   alt={movie.title}
                   title={movie.title}
@@ -409,6 +410,7 @@ export default function DecisionReportModal({ movieId, isOpen, onClose, onMovieS
                       className="p-3 bg-slate-950/70 hover:bg-slate-800 border border-slate-800 rounded-xl cursor-pointer transition flex items-center space-x-3 group"
                     >
                       <MoviePoster
+                        id={alt.movie.id}
                         src={alt.movie.poster_url}
                         alt={alt.movie.title}
                         title={alt.movie.title}

@@ -135,6 +135,7 @@ export default function ComparePage({ onOpenDecisionReport }) {
                   {/* Poster & Title Header */}
                   <div className="flex items-start space-x-4">
                     <MoviePoster
+                      id={movie.id}
                       src={movie.poster_url}
                       alt={movie.title}
                       title={movie.title}

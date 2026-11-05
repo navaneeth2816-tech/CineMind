@@ -322,6 +322,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                   >
                     <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-2.5 bg-slate-900">
                       <MoviePoster
+                        id={m.id}
                         src={m.poster_url}
                         alt={m.title}
                         title={m.title}
@@ -431,6 +432,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
               >
                 <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 bg-slate-950">
                   <MoviePoster
+                    id={rec.movie.id}
                     src={rec.movie.poster_url}
                     alt={rec.movie.title}
                     title={rec.movie.title}
@@ -655,6 +657,7 @@ export default function DiscoverPage({ onOpenDecisionReport }) {
                 {/* Poster container */}
                 <div className="relative aspect-[2/3] rounded-xl overflow-hidden mb-3 bg-slate-950">
                   <MoviePoster
+                    id={m.id}
                     src={m.poster_url}
                     alt={m.title}
                     title={m.title}

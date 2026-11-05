@@ -240,6 +240,7 @@ export default function TasteProfilePage({ onOpenDecisionReport }) {
                         className="flex items-center space-x-3 cursor-pointer min-w-0"
                       >
                         <MoviePoster
+                          id={m.id}
                           src={m.poster_url}
                           alt={m.title}
                           title={m.title}
@@ -295,6 +296,7 @@ export default function TasteProfilePage({ onOpenDecisionReport }) {
                     >
                       <div className="flex items-center space-x-3">
                         <MoviePoster
+                          id={item.movie.id}
                           src={item.movie.poster_url}
                           alt={item.movie.title}
                           title={item.movie.title}

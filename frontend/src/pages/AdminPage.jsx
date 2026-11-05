@@ -199,6 +199,7 @@ export default function AdminPage() {
                 <tr key={m.id} className="hover:bg-slate-800/40">
                   <td className="py-2.5 px-3 font-semibold text-white flex items-center space-x-2">
                     <MoviePoster
+                      id={m.id}
                       src={m.poster_url}
                       alt={m.title}
                       title={m.title}

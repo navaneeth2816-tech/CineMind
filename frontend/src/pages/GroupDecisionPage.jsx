@@ -426,6 +426,7 @@ export default function GroupDecisionPage({ onOpenDecisionReport }) {
                       <div className="flex items-start gap-3.5">
                         <div className="w-20 sm:w-24 shrink-0 aspect-[2/3] rounded-xl overflow-hidden bg-slate-950 border border-slate-800 shadow-sm">
                           <MoviePoster
+                            id={c.movie.id}
                             src={c.movie.poster_url}
                             alt={c.movie.title}
                             title={c.movie.title}

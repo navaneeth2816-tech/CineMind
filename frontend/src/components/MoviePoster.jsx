@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Film } from 'lucide-react';
-import { getVerifiedPoster } from '../constants/posters';
+import { getPosterCandidates } from '../constants/posters';
 
 /**
- * Robust, production-grade MoviePoster component with:
- * - Direct TMDB image rendering with referrerPolicy="no-referrer"
- * - Intelligent self-healing fallback to verified TMDB registry by title
- * - Smooth skeleton loading state (prevents broken image icons)
- * - Graceful fallback card only when all image sources are exhausted
- * - Preserves existing layout, dimensions, and responsive aspect ratios
+ * Resilient, multi-tier MoviePoster component:
+ * 1. Tries primary backend poster_url (TMDB CDN)
+ * 2. On error/ISP block, immediately falls back to high-res first-party bundled poster (/posters/<slug>.jpg)
+ * 3. Gracefully transitions smoothly with skeleton loader
+ * 4. Only shows placeholder card if all image sources are genuinely exhausted
+ * 5. Completely eliminates CORS/ISP issues on deployed environments (Vercel)
  */
 export default function MoviePoster({
   src,
@@ -16,50 +16,37 @@ export default function MoviePoster({
   title,
   year,
   language,
+  id,
   className = '',
   aspectRatio = 'aspect-[2/3]',
   loading = 'lazy'
 }) {
-  const getInitialSource = () => {
-    if (src && typeof src === 'string' && src.trim() !== '') {
-      return src;
-    }
-    return getVerifiedPoster(title);
-  };
-
-  const [effectiveSrc, setEffectiveSrc] = useState(getInitialSource);
-  const [hasError, setHasError] = useState(!getInitialSource());
+  const [candidates, setCandidates] = useState(() => getPosterCandidates(src, title, id));
+  const [candidateIndex, setCandidateIndex] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [triedVerifiedFallback, setTriedVerifiedFallback] = useState(
-    Boolean(!src && getVerifiedPoster(title))
-  );
+  const [hasError, setHasError] = useState(false);
 
-  // Synchronize state whenever src or title prop updates
   useEffect(() => {
-    const initial = (src && typeof src === 'string' && src.trim() !== '')
-      ? src
-      : getVerifiedPoster(title);
-
-    setEffectiveSrc(initial);
+    const list = getPosterCandidates(src, title, id);
+    setCandidates(list);
+    setCandidateIndex(0);
     setIsLoaded(false);
-    setHasError(!initial);
-    setTriedVerifiedFallback(Boolean(!src && initial));
-  }, [src, title]);
+    setHasError(list.length === 0);
+  }, [src, title, id]);
 
   const handleImageError = () => {
-    if (!triedVerifiedFallback) {
-      const verified = getVerifiedPoster(title);
-      if (verified && verified !== effectiveSrc) {
-        setTriedVerifiedFallback(true);
-        setEffectiveSrc(verified);
-        return;
-      }
+    if (candidateIndex + 1 < candidates.length) {
+      setCandidateIndex(prev => prev + 1);
+      setIsLoaded(false);
+    } else {
+      setHasError(true);
     }
-    setHasError(true);
   };
 
-  // If no source provided or error encountered, render professional fallback
-  if (!effectiveSrc || hasError) {
+  const currentSrc = candidates[candidateIndex];
+
+  // If no source provided or all candidates failed, render professional fallback
+  if (!currentSrc || hasError) {
     return (
       <div
         className={`relative ${aspectRatio} w-full bg-gradient-to-br from-slate-800 to-slate-950 flex flex-col items-center justify-center p-3 text-center border border-slate-700/50 rounded-xl overflow-hidden select-none ${className}`}
@@ -97,11 +84,11 @@ export default function MoviePoster({
         </div>
       )}
       <img
-        src={effectiveSrc}
+        key={currentSrc}
+        src={currentSrc}
         alt={alt || title || 'Movie poster'}
         loading={loading}
         referrerPolicy="no-referrer"
-        crossOrigin="anonymous"
         onLoad={() => setIsLoaded(true)}
         onError={handleImageError}
         className={`w-full h-full object-cover transition-opacity duration-300 ${

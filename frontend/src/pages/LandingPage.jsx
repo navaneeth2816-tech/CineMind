@@ -253,6 +253,7 @@ export default function LandingPage({ onOpenDecisionReport }) {
                 >
                   <MoviePoster
                     key={`hero-preview-${currentPreview.id || currentPreview.title}`}
+                    id={currentPreview.id}
                     src={currentPreview.poster_url}
                     alt={currentPreview.title}
                     title={currentPreview.title}
