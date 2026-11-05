@@ -83,14 +83,19 @@ def create_app(config_class=Config):
             }
         }), 200 if db_status == 'connected' else 503
 
-    # Verify database connectivity and auto-seed if movies table is empty
+    # Verify database connectivity, bidirectional sync user replicas, and auto-seed if movies table is empty
     with app.app_context():
         try:
             from sqlalchemy import text
             from app.services.seed_data import seed_database
+            from app.services.auth_service import sync_sqlite_users_to_mysql
             from app.models import Movie
             db.session.execute(text("SELECT 1"))
             db.create_all()
+            
+            # Sync user accounts between SQLite backup and MySQL to prevent auth loss across environments
+            sync_sqlite_users_to_mysql()
+
             if Movie.query.count() == 0:
                 print("Empty movie catalogue detected. Seeding benchmark & regional dataset...")
                 seed_database()

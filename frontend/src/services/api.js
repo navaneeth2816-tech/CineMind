@@ -16,19 +16,32 @@ async function request(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
+  const isAuthOrUserData = endpoint.startsWith('/auth') || endpoint.startsWith('/me');
+
   try {
     const res = await fetch(`${PRIMARY_API_BASE}${endpoint}`, { ...options, headers });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      if (res.status === 502 || res.status === 503) {
-        throw new Error('Local backend server is not running. Please start the Python backend (python run.py).');
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        const connErr = new Error('Local backend server is not running. Please start the Python backend (python run.py).');
+        connErr.status = res.status;
+        connErr.isConnectionError = true;
+        throw connErr;
       }
-      throw new Error(data.error || data.message || `Request failed with status ${res.status}`);
+      const err = new Error(data.error || data.message || `Request failed with status ${res.status}`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
     }
     return data;
   } catch (err) {
-    // If local dev server proxy is unreachable (e.g. python run.py not yet started), auto-fallback to deployed Render backend
-    if (PRIMARY_API_BASE === '/api') {
+    const isConnErr = err.isConnectionError || 
+      err.status === 502 || err.status === 503 || err.status === 504 || 
+      err.name === 'TypeError' || err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError');
+
+    // CRITICAL: NEVER silently fall back to an external/remote database for authentication or user sessions.
+    // Silently routing auth to a different server causes split-brain data loss between local MySQL and cloud SQLite.
+    if (PRIMARY_API_BASE === '/api' && !isAuthOrUserData) {
       try {
         const fallbackRes = await fetch(`${FALLBACK_API_BASE}${endpoint}`, { ...options, headers });
         const fallbackData = await fallbackRes.json().catch(() => ({}));
@@ -39,6 +52,14 @@ async function request(endpoint, options = {}) {
         // Fallback also failed
       }
     }
+
+    if (isConnErr && PRIMARY_API_BASE === '/api') {
+      const serverErr = new Error('Local backend server is not running. Please start the Python backend with: python run.py');
+      serverErr.status = 503;
+      serverErr.isConnectionError = true;
+      throw serverErr;
+    }
+
     console.error(`API Error [${endpoint}]:`, err);
     throw err;
   }

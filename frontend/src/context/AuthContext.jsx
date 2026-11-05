@@ -33,9 +33,14 @@ export function AuthProvider({ children }) {
         setWatchlistIds(new Set(watchlist.map(m => m.id)));
       } catch (err) {
         console.warn('Failed to restore session:', err);
-        localStorage.removeItem('cinemind_token');
-        setToken(null);
-        setUser(null);
+        // Only clear stored token if the backend explicitly returned a 401 Unauthorized (token invalid / expired).
+        // If it was a network error or backend still booting up after system restart,
+        // PRESERVE the token so the session persists once the server is reached!
+        if (err.status === 401) {
+          localStorage.removeItem('cinemind_token');
+          setToken(null);
+          setUser(null);
+        }
       } finally {
         setLoading(false);
       }

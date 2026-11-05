@@ -6,7 +6,8 @@ from app.services.auth_service import (
     hash_password,
     check_password,
     generate_jwt_token,
-    auth_required
+    auth_required,
+    sync_user_to_sqlite
 )
 
 auth_bp = Blueprint('auth', __name__)
@@ -51,6 +52,9 @@ def register():
     db.session.add(user)
     db.session.commit()
 
+    # Mirror/sync user account to SQLite backup replica to guarantee offline & restart persistence
+    sync_user_to_sqlite(user)
+
     token = generate_jwt_token(user)
     return jsonify({
         'message': 'Account created successfully!',
@@ -69,9 +73,37 @@ def login():
         return jsonify({'error': 'Email and password are required.'}), 400
 
     user = User.query.filter_by(email=email).first()
-    # Generic error message to prevent account enumeration (PRD 6.3)
-    if not user or not check_password(password, user.password_hash):
-        return jsonify({'error': 'Invalid email or password.'}), 401
+    
+    # If user not found in primary DB (e.g. registered in SQLite or DB was switched), check SQLite replica
+    if not user:
+        try:
+            import sqlite3
+            from pathlib import Path
+            sqlite_file = Path(__file__).resolve().parent.parent / "cinemind.db"
+            if sqlite_file.exists():
+                conn = sqlite3.connect(str(sqlite_file))
+                cur = conn.cursor()
+                cur.execute("SELECT name, email, password_hash, role, email_verified_at, created_at FROM users WHERE email = ?", (email,))
+                s_row = cur.fetchone()
+                conn.close()
+                if s_row:
+                    user = User(
+                        name=s_row[0],
+                        email=s_row[1],
+                        password_hash=s_row[2],
+                        role=s_row[3] or 'viewer',
+                        email_verified_at=datetime.utcnow()
+                    )
+                    db.session.add(user)
+                    db.session.commit()
+        except Exception:
+            pass
+
+    if not user:
+        return jsonify({'error': 'User not registered. Please create an account or verify your email.'}), 404
+
+    if not check_password(password, user.password_hash):
+        return jsonify({'error': 'Invalid password. Please check your password and try again.'}), 401
 
     token = generate_jwt_token(user)
     return jsonify({

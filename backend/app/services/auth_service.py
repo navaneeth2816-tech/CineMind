@@ -128,3 +128,112 @@ def admin_required(f):
             return jsonify({'error': 'Forbidden. Admin privileges required.'}), 403
         return f(*args, user=user, **kwargs)
     return decorated_function
+
+def sync_user_to_sqlite(user):
+    """
+    Dual-writes/synchronizes user account to local SQLite database (app/cinemind.db)
+    to guarantee account persistence across database environments, restarts, and offline modes.
+    """
+    try:
+        import sqlite3
+        from pathlib import Path
+        
+        sqlite_file = Path(__file__).resolve().parent.parent / "cinemind.db"
+        if not sqlite_file.parent.exists():
+            return
+            
+        conn = sqlite3.connect(str(sqlite_file))
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name VARCHAR(100) NOT NULL,
+                email VARCHAR(120) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                role VARCHAR(20) DEFAULT 'viewer',
+                email_verified_at DATETIME,
+                created_at DATETIME,
+                runtime_limit INTEGER,
+                excluded_genres TEXT
+            )
+        """)
+        
+        cursor.execute("SELECT id FROM users WHERE email = ?", (user.email,))
+        row = cursor.fetchone()
+        
+        created_at_str = user.created_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(user, 'created_at', None) else datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        verified_at_str = user.email_verified_at.strftime('%Y-%m-%d %H:%M:%S') if getattr(user, 'email_verified_at', None) else None
+        
+        if row:
+            cursor.execute("""
+                UPDATE users 
+                SET name = ?, password_hash = ?, role = ?, email_verified_at = ?
+                WHERE email = ?
+            """, (user.name, user.password_hash, user.role, verified_at_str, user.email))
+        else:
+            cursor.execute("""
+                INSERT INTO users (name, email, password_hash, role, email_verified_at, created_at, runtime_limit, excluded_genres)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (user.name, user.email, user.password_hash, user.role, verified_at_str, created_at_str, getattr(user, 'runtime_limit', None), getattr(user, 'excluded_genres', None)))
+            
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        if current_app:
+            current_app.logger.warning(f"SQLite user mirror sync warning: {e}")
+
+def sync_sqlite_users_to_mysql():
+    """
+    Bidirectional synchronization on boot: guarantees that any user accounts in SQLite
+    are mirrored into MySQL, and any users in MySQL are mirrored into SQLite.
+    """
+    try:
+        import sqlite3
+        from pathlib import Path
+        from app.models import User, db
+        
+        sqlite_file = Path(__file__).resolve().parent.parent / "cinemind.db"
+        if not sqlite_file.exists():
+            return
+            
+        conn = sqlite3.connect(str(sqlite_file))
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, email, password_hash, role, email_verified_at, created_at FROM users")
+        sqlite_users = cursor.fetchall()
+        
+        # 1. Sync SQLite -> MySQL
+        for row in sqlite_users:
+            u_name, u_email, u_pwd, u_role, u_ver, u_cre = row
+            existing = User.query.filter_by(email=u_email).first()
+            if not existing:
+                new_u = User(
+                    name=u_name,
+                    email=u_email,
+                    password_hash=u_pwd,
+                    role=u_role or 'viewer',
+                    email_verified_at=datetime.datetime.utcnow()
+                )
+                db.session.add(new_u)
+        db.session.commit()
+        
+        # 2. Sync MySQL -> SQLite
+        mysql_users = User.query.all()
+        for u in mysql_users:
+            cursor.execute("SELECT id FROM users WHERE email = ?", (u.email,))
+            if not cursor.fetchone():
+                cursor.execute("""
+                    INSERT INTO users (name, email, password_hash, role, email_verified_at, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    u.name,
+                    u.email,
+                    u.password_hash,
+                    u.role,
+                    u.email_verified_at.strftime('%Y-%m-%d %H:%M:%S') if u.email_verified_at else None,
+                    u.created_at.strftime('%Y-%m-%d %H:%M:%S') if u.created_at else datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+                ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        pass
